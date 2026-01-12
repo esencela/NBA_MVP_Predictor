@@ -50,6 +50,7 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
     
     return df
 
+
 def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Extract NBA team statistics for a given season from Basketball Reference.
@@ -72,6 +73,7 @@ def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     df_west.reset_index(drop=True, inplace=True)
 
     return df_east, df_west
+
 
 def retrieve_tables_from_url(url: str) -> list[pd.DataFrame]:
     """
