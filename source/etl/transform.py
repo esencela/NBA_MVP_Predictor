@@ -1,6 +1,22 @@
 import numpy as np
 import pandas as pd
 
+
+def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):
+    player_data = clean_per_game_data(raw_player)
+    adv_data = clean_advanced_data(raw_advanced)
+    team_data = clean_team_data(raw_team)
+    mvp_data = clean_mvp_vote_data(raw_mvp)
+
+    merged_data = merge_data(player_data, adv_data, team_data, mvp_data)
+    transformed_data = impute_win_rate(merged_data)
+    transformed_data = add_season_column(transformed_data, season)
+
+    column_order = ['Season', 'Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'W/L%', 'Share']
+
+    return transformed_data[column_order]
+
+
 def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
     """
     Adds a 'Season' column to a given DataFrame.
@@ -21,18 +37,18 @@ def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
 
 def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Cleans the per-game dataset, only keeping Player, Minutes Played (MP), Points (PTS), Assists (AST), Total Rebounds (TRB), Steals (STL) and Blocks (BLK) columns and dropping rows with null values
+    Cleans the per-game dataset, only keeping Player, Minutes Played (MP), Points (PTS), Assists (AST), Total Rebounds (TRB), Steals (STL) and Blocks (BLK) columns and dropping rows with null values.
     
     Params:
-        df (pd.DataFrame): DataFrame holding raw per-game statistics
+        df (pd.DataFrame): DataFrame holding raw per-game statistics.
 
     Returns:
-        pd.DataFrame: Cleaned DataFrame with only the specified columns
+        pd.DataFrame: Cleaned DataFrame with only the specified columns.
     """
 
     df = df.copy()
 
-    columns_to_keep = ['Season', 'Player', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
+    columns_to_keep = ['Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
 
     df = df[columns_to_keep]
 
@@ -43,17 +59,17 @@ def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Cleans the advanced dataset, only keeping True Shooting Percentage (TS%), Player Efficiency Rating (PER), Win Shares (WS), Box Plus Minus (BPM), Value over Replacement Player (VORP) and Usage Rate (USG%) columns and dropping rows with null values
+    Cleans the advanced dataset, only keeping True Shooting Percentage (TS%), Player Efficiency Rating (PER), Win Shares (WS), Box Plus Minus (BPM), Value over Replacement Player (VORP) and Usage Rate (USG%) columns and dropping rows with null values.
     
     Params:
-        df (pd.DataFrame): DataFrame holding raw advanced statistics
+        df (pd.DataFrame): DataFrame holding raw advanced statistics.
 
     Returns:
-        pd.DataFrame: Cleaned DataFrame with only the specified columns
+        pd.DataFrame: Cleaned DataFrame with only the specified columns.
     """
     df = df.copy()
 
-    columns_to_keep = ['TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
+    columns_to_keep = ['Player', 'Team', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
 
     df = df[columns_to_keep]
 
@@ -63,5 +79,176 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def merge_player_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merges cleaned per-game player data and advanced player statistics.
+    
+    Params:
+        per_game_data (pd.DataFrame): DataFrame holding cleaned per-game player statistics
+        advanced_data (pd.DataFrame): DataFrame holding cleaned advanced player statistics
 
-    df = 
+    Returns:
+        pd.DataFrame: Merged DataFrame holding both per-game and advanced player statistics
+    """
+
+    df = per_game_data.merge(advanced_data, how='inner', on=['Player', 'Team'])
+
+    return df
+
+
+def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame:
+    """
+    Cleans and concatenates the team standings datasets, only keeping Team Name (Team) and Win Rate (W/L%) columns and mapping a Team Code (Code) onto the data.
+    
+    Params:
+        df_tuple (tuple[pd.DataFrame, pd.DataFrame): Tuple of Eastern and Western Conference data (East, West).
+
+    Returns:
+        pd.DataFrame: Cleaned and concatenated DataFrame with only the specified columns.
+    """
+    df_east = df_tuple[0].copy()
+    df_west = df_tuple[1].copy()
+
+    df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace('*', '')
+    df_west['Western Conference'] = df_west['Western Conference'].str.replace('*', '')
+
+    df_east = df_east.rename({'Eastern Conference': 'Team'}, axis=1)
+    df_west = df_west.rename({'Western Conference': 'Team'}, axis=1)
+
+    columns_to_keep = ['Team', 'W/L%']
+
+    df_east = df_east[columns_to_keep]
+    df_west = df_west[columns_to_keep]
+
+    df_ovr = pd.concat([df_east, df_west])
+
+    # Return a three letter code for a specified team name
+    def team_code(team_name):
+        codes = {'Milwaukee Bucks': 'MIL',
+                 'Boston Celtics': 'BOS',
+                 'Philadelphia 76ers': 'PHI',
+                 'Cleveland Cavaliers': 'CLE',
+                 'New York Knicks': 'NYK',
+                 'Brooklyn Nets': 'BRK',
+                 'Miami Heat': 'MIA',
+                 'Atlanta Hawks': 'ATL',
+                 'Toronto Raptors': 'TOR',
+                 'Chicago Bulls': 'CHI',
+                 'Indiana Pacers': 'IND',
+                 'Washington Wizards': 'WAS',
+                 'Orlando Magic': 'ORL',
+                 'Charlotte Hornets': 'CHO',
+                 'Detroit Pistons': 'DET',
+                 'Charlotte Bobcats': 'CHA',
+                 'New Jersey Nets': 'NJN',
+                 'Denver Nuggets': 'DEN',
+                 'Memphis Grizzlies': 'MEM',
+                 'Sacramento Kings': 'SAC',
+                 'Phoenix Suns': 'PHO',
+                 'Los Angeles Clippers': 'LAC',
+                 'Golden State Warriors': 'GSW',
+                 'Los Angeles Lakers': 'LAL',
+                 'Minnesota Timberwolves': 'MIN',
+                 'New Orleans Pelicans': 'NOP',
+                 'Oklahoma City Thunder': 'OKC',
+                 'Dallas Mavericks': 'DAL',
+                 'Utah Jazz': 'UTA',
+                 'Portland Trail Blazers': 'POR',
+                 'Houston Rockets': 'HOU',
+                 'San Antonio Spurs': 'SAS',
+                 'New Orleans Hornets': 'NOP',
+                 'Seattle Supersonics': 'SEA',
+                 'New Orleans/Oklahoma City Hornets': 'NOK'}
+        
+        return codes[team_name]
+    
+
+    df_ovr['Team'] = df_ovr['Team'].map(team_code)
+
+    return df_ovr
+
+
+def clean_mvp_vote_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cleans the MVP voting dataset, only keeping Player, Team and Vote Share (Share) columns.
+    
+    Params:
+        df (pd.DataFrame): DataFrame holding MVP voting data.
+
+    Returns:
+        pd.DataFrame: Cleaned DataFrame with only the specified columns.
+    """
+
+    df = df.copy()
+
+    # Rename nested column names
+    df = df.set_axis(['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
+                              'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48'], 
+                               axis=1)
+    
+    columns_to_keep = ['Player', 'Team', 'Share']
+
+    df = df[columns_to_keep]
+
+    return df
+
+
+def merge_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame, team_data: pd.DataFrame, mvp_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merges all datasets into one dataframe and fills missing values for MVP vote share.
+
+    Params:
+        per_game_data (pd.DataFrame): DataFrame holding cleaned per-game player statistics.
+        advanced_data (pd.DataFrame): DataFrame holding cleaned advanced player statistics.
+        team_data (pd.DataFrame): DataFrame holding cleaned team statistics.
+        mvp_data (pd.DataFrame): DataFrame holding cleaned MVP vote share data.
+
+    Returns:
+        pd.DataFrame: Merged DataFrame.
+    
+    """
+
+    df = per_game_data.merge(advanced_data, how='inner', on=['Player', 'Team'])
+
+    df = df.merge(team_data, how='left', on='Team')
+
+    df = df.merge(mvp_data, how='left', on=['Player', 'Team'])
+
+    # Null values are players with zero vote share
+    df['Share'] = df['Share'].fillna(0)
+
+    return df
+
+
+def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    
+    Imputes team win percentage for players who have played for multiple teams by computing a games weighted average of their team win rates.
+
+    For players with a digit in their team code, win percentage is calculated using individual team rows weighted by games played. Duplicate rows are removed.
+
+    Params: 
+        df (pd.DataFrame): DataFrame holding merged player and team data.
+
+    Returns:
+        pd.DataFrame: DataFrame
+    
+    """
+    df = df.copy()
+
+    # Boolean mask of players that have played for multiple teams
+    multi_team_mask = df['Team'].str.contains('\\d', regex=True)
+
+    # Group by player and calculate weighted win rate - Players with one team will be unaffected
+    weighted_team_stats = (df[~multi_team_mask].groupby('Player')[['Player', 'W/L%', 'G']]
+    .apply(lambda x: (x['W/L%'] * x['G']).sum() / x['G'].sum()).reset_index(name='W/L%_imputed'))
+
+    # Merge imputed win rate back into DataFrame
+    df = df.merge(weighted_team_stats, on='Player', how='left')
+    df.loc[multi_team_mask, 'W/L%'] = df.loc[multi_team_mask, 'W/L%_imputed']
+
+    # Clean DataFrame
+    df.drop_duplicates(subset=['Player'], keep='first', inplace=True) 
+    df.drop(columns='W/L%_imputed', inplace=True)
+    df['W/L%'] = df['W/L%'].round(3)
+
+    return df
