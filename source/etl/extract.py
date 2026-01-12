@@ -11,7 +11,7 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        pandas.DataFrame: Raw per-game player statistics for the given season.
+        pd.DataFrame: Raw per-game player statistics for the given season.
     """
 
     url = f"https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html"
@@ -35,7 +35,7 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        pandas.DataFrame: Raw advanced player statistics for the given season.
+        pd.DataFrame: Raw advanced player statistics for the given season.
     """
 
     url = f"https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html"
@@ -58,7 +58,7 @@ def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        tuple[pandas.DataFrame, pandas.DataFrame]: Raw team statistics for the given season (East, West).
+        tuple[pd.DataFrame, pd.DataFrame]: Raw team statistics for the given season (East, West).
     """
 
     url = f"https://www.basketball-reference.com/leagues/NBA_{season}_standings.html"
@@ -81,7 +81,7 @@ def retrieve_tables_from_url(url: str) -> list[pd.DataFrame]:
         url (str): The URL of webpage containing HTML tables.
 
     Returns:
-        list[pandas.DataFrame]: List of tables retrieved from the webpage
+        list[pd.DataFrame]: List of tables retrieved from the webpage
 
     Raises:
         ValueError: If no tables are found at the specified URL
