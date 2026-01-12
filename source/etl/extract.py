@@ -75,6 +75,28 @@ def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     return df_east, df_west
 
 
+def extract_mvp_vote_data(season: int) -> pd.DataFrame:
+    """
+    Extract NBA MVP voting data for a given season from Basketball Reference.
+
+    Params:
+        season (int): NBA season year (e.g. 2024 for the 2023–24 season).
+
+    Returns:
+        pd.DataFrame: Raw MVP voting data for the given season.
+    """
+
+    url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
+    tables = retrieve_tables_from_url(url)
+
+    # Required data is kept in first table
+    df = tables[0]
+
+    df.reset_index(drop=True, inplace=True)
+
+    return df
+
+
 def retrieve_tables_from_url(url: str) -> list[pd.DataFrame]:
     """
     Retrieve all HTML tables from a specified URL
