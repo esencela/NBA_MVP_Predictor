@@ -14,7 +14,7 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw per-game player statistics for the given season.
     """
 
-    url = f"https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html"
+    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html'
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
@@ -38,7 +38,7 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw advanced player statistics for the given season.
     """
 
-    url = f"https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html"
+    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html'
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
@@ -61,7 +61,7 @@ def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
         tuple[pd.DataFrame, pd.DataFrame]: Raw team statistics for the given season (East, West).
     """
 
-    url = f"https://www.basketball-reference.com/leagues/NBA_{season}_standings.html"
+    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
     tables = retrieve_tables_from_url(url)
 
     # Required data is split between first two tables
@@ -90,6 +90,6 @@ def retrieve_tables_from_url(url: str) -> list[pd.DataFrame]:
     tables = pd.read_html(url)
 
     if not tables:
-        raise ValueError(f"No tables found in url: {url}")
+        raise ValueError(f'No tables found in url: {url}')
     
     return tables
