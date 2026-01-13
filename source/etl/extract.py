@@ -1,6 +1,5 @@
-import requests
-import numpy as np
-import pandas as pd
+import requests # pyright: ignore[reportMissingModuleSource]
+import pandas as pd # pyright: ignore[reportMissingModuleSource]
 
 
 def extract_per_game_season_data(season: int) -> pd.DataFrame:

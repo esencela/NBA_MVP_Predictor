@@ -1,14 +1,12 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine # pyright: ignore[reportMissingImports]
 import os
-from src.config.settings import (
+from source.config.settings import (
     POSTGRES_USER,
-    POSTGRES_PASSWORD,
-    POSTGRES_DB,
-    POSTGRES_HOST,
-    POSTGRES_PORT,
+    POSTGRES_PASSWORD
 )
 
-def get_engine(): 
-    """Returns a sqlalchemy engine that connects to the postgresql database"""
 
-    return create_engine(f'postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}')
+def get_engine(): 
+    """Returns a sqlalchemy engine that connects to the postgresql database."""
+
+    return create_engine(f'postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@localhost:5432/nba_mvp')

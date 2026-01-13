@@ -1,6 +1,5 @@
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
+import pandas as pd # pyright: ignore[reportMissingModuleSource]
+from sklearn.preprocessing import StandardScaler # pyright: ignore[reportMissingModuleSource]
 
 
 def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):

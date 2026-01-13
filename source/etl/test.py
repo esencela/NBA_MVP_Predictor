@@ -1,9 +1,10 @@
-from extract import extract_per_game_season_data, extract_advanced_season_data, extract_team_season_data, extract_mvp_vote_data
-from transform import transform
-import pandas as pd
+from source.etl.extract import extract_per_game_season_data, extract_advanced_season_data, extract_team_season_data, extract_mvp_vote_data
+from source.etl.transform import transform
+from source.etl.load import load_to_database
+import pandas as pd # pyright: ignore[reportMissingModuleSource]
 import time
 
-season = 2023
+season = 2025
 
 player_data = extract_per_game_season_data(season)
 time.sleep(5)
@@ -18,4 +19,7 @@ mvp_data = extract_mvp_vote_data(season)
 time.sleep(5)
 print('Sleeping')
 
-transform(player_data, adv_data, team_data, mvp_data, season).to_csv('test2023.csv', index=False)
+df_stats, df_features = transform(player_data, adv_data, team_data, mvp_data, season)
+
+load_to_database(df_stats, 'player_stats')
+load_to_database(df_features, 'player_features')
