@@ -1,8 +1,33 @@
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 
 def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):
+    """
+    Transform raw NBA data sources into a model-ready, season-specific feature table.
+
+    This function performs the full transformation pipeline for a single NBA season:
+    - Cleans raw per-game, advanced, team, and MVP voting datasets
+    - Merges all sources into a unified dataset
+    - Imputes missing team win rate values
+    - Adds a season identifier
+    - Engineers domain-specific features
+    - Applies feature scaling
+    - Returns a consistently ordered feature set for downstream modeling
+
+    Params:
+        raw_player (pd.DataFrame): Raw per-game player statistics.
+        raw_advanced (pd.DataFrame): Raw advanced player statistics.
+        raw_team (pd.DataFrame): Raw team statistics.
+        raw_mvp (pd.DataFrame): Raw MVP voting data.
+        season (int): NBA season year (e.g. 2024 for the 2023–24 season).
+
+    Returns:
+        pd.DataFrame: A cleaned, enriched, and scaled player-level feature table with a fixed schema,
+                      suitable for training or inference in MVP prediction models.
+    """
+
     player_data = clean_per_game_data(raw_player)
     adv_data = clean_advanced_data(raw_advanced)
     team_data = clean_team_data(raw_team)
@@ -11,10 +36,12 @@ def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):
     merged_data = merge_data(player_data, adv_data, team_data, mvp_data)
     transformed_data = impute_win_rate(merged_data)
     transformed_data = add_season_column(transformed_data, season)
+    enriched_data = build_features(transformed_data)
+    enriched_data = scale_features(enriched_data)
 
-    column_order = ['Season', 'Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'W/L%', 'Share']
+    column_order = ['Season', 'Player', 'Team', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L', 'W/L%', 'Share']
 
-    return transformed_data[column_order]
+    return enriched_data[column_order]
 
 
 def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
@@ -37,7 +64,8 @@ def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
 
 def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Cleans the per-game dataset, only keeping Player, Minutes Played (MP), Points (PTS), Assists (AST), Total Rebounds (TRB), Steals (STL) and Blocks (BLK) columns and dropping rows with null values.
+    Cleans the per-game dataset, only keeping Player, Minutes Played (MP), Points (PTS), Assists (AST), Total Rebounds (TRB), Steals (STL) and Blocks (BLK) columns, 
+    dropping rows with null values.
     
     Params:
         df (pd.DataFrame): DataFrame holding raw per-game statistics.
@@ -59,7 +87,8 @@ def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Cleans the advanced dataset, only keeping True Shooting Percentage (TS%), Player Efficiency Rating (PER), Win Shares (WS), Box Plus Minus (BPM), Value over Replacement Player (VORP) and Usage Rate (USG%) columns and dropping rows with null values.
+    Cleans the advanced dataset, only keeping True Shooting Percentage (TS%), Player Efficiency Rating (PER), Win Shares (WS), Box Plus Minus (BPM),
+    Value over Replacement Player (VORP) and Usage Rate (USG%) columns and dropping rows with null values.
     
     Params:
         df (pd.DataFrame): DataFrame holding raw advanced statistics.
@@ -100,7 +129,7 @@ def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame
     Cleans and concatenates the team standings datasets, only keeping Team Name (Team) and Win Rate (W/L%) columns and mapping a Team Code (Code) onto the data.
     
     Params:
-        df_tuple (tuple[pd.DataFrame, pd.DataFrame): Tuple of Eastern and Western Conference data (East, West).
+        df_tuple (tuple[pd.DataFrame, pd.DataFrame): Tuple of Eastern and Western Conference team data (East, West).
 
     Returns:
         pd.DataFrame: Cleaned and concatenated DataFrame with only the specified columns.
@@ -221,7 +250,6 @@ def merge_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame, team_da
 
 def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
     """
-    
     Imputes team win percentage for players who have played for multiple teams by computing a games weighted average of their team win rates.
 
     For players with a digit in their team code, win percentage is calculated using individual team rows weighted by games played. Duplicate rows are removed.
@@ -230,7 +258,7 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): DataFrame holding merged player and team data.
 
     Returns:
-        pd.DataFrame: DataFrame
+        pd.DataFrame: DataFrame holding merged data and imputed win rate.
     
     """
     df = df.copy()
@@ -250,5 +278,47 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
     df.drop_duplicates(subset=['Player'], keep='first', inplace=True) 
     df.drop(columns='W/L%_imputed', inplace=True)
     df['W/L%'] = df['W/L%'].round(3)
+
+    return df
+
+
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes additional features for cleaned and merged DataFrames.
+    Calculates the product of Value over Replacement Player and Win Percentage to capture the most valuable players on the best teams.
+    
+    Params:
+        df (pd.DataFrame): DataFrame holding merged player and team data. Requires 'W/L%' column to be imputed.
+
+    Returns:
+        pd.DataFrame: DataFrame holding merged data and extra features.
+    """
+    
+    df = df.copy()
+
+    # Computer new feature - VORP * Win Percentage
+    df['VORP_W/L'] = df['VORP'] * df['W/L%']
+
+    return df
+
+
+def scale_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transforms player data using sklearn.StandardScaler() to capture relative season performance and prepare data for statistical models.
+    This function should only be used on DataFrames holding statistics from one season.
+    
+    Params:
+        df (pd.DataFrame): DataFrame holding merged data with built features.
+
+    Returns:
+        pd.DataFrame: DataFrame holding merged data and scaled features.
+    """
+
+    df = df.copy()
+    scaled_columns = ['MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L']
+
+    scaler = StandardScaler()
+    scaler.fit(df[scaled_columns])
+    df[scaled_columns] = scaler.transform(df[scaled_columns])
 
     return df
