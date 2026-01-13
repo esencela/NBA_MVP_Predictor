@@ -24,8 +24,8 @@ def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        pd.DataFrame: A cleaned, enriched, and scaled player-level feature table with a fixed schema,
-                      suitable for training or inference in MVP prediction models.
+        tuple[pd.DataFrame, pd.DataFrame]: A tuple containing a cleaned, enriched, and scaled player-level feature table suitable for training models [0],
+                                           and a cleaned dataset of unscaled player stats for reporting [1]
     """
 
     player_data = clean_per_game_data(raw_player)
@@ -39,9 +39,13 @@ def transform(raw_player, raw_advanced, raw_team, raw_mvp, season):
     enriched_data = build_features(transformed_data)
     enriched_data = scale_features(enriched_data)
 
-    column_order = ['Season', 'Player', 'Team', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L', 'W/L%', 'Share']
+    stats_order = ['Season', 'Player', 'Team', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
+    feature_order = ['Season', 'Player', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L', 'W/L%', 'Share']
 
-    return enriched_data[column_order]
+    df_stats = transformed_data[stats_order]
+    df_features = enriched_data[feature_order]
+
+    return df_features, df_stats
 
 
 def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
