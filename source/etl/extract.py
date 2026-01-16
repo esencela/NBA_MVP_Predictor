@@ -1,5 +1,47 @@
 import requests # pyright: ignore[reportMissingModuleSource]
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
+from typing import NamedTuple
+import time
+
+class ExtractedData(NamedTuple):
+    per_game: pd.DataFrame
+    advanced: pd.DataFrame
+    team: pd.DataFrame
+    mvp: pd.DataFrame
+
+
+def extract(season: int) -> ExtractedData:
+    """
+    Extract NBA datasets for a given season from Basketball Reference, implementing sleep to avoid request limits.
+
+    This function extracts all relevant datasets for a single NBA season:
+    - NBA per-game player statistics
+    - NBA advanced player statistics
+    - NBA team statistics
+    - NBA MVP voting data
+    
+    Params:
+        season (int): NBA season year (e.g. 2024 for the 2023–24 season).
+
+    Returns:
+        ExtractedData: NamedTuple that holds all dataframes (per_game, advanced, team, mvp)
+    """
+
+    sleeping_time = 5
+
+    per_game = extract_per_game_season_data(season)
+    time.sleep(sleeping_time)
+
+    advanced = extract_advanced_season_data(season)
+    time.sleep(sleeping_time)
+
+    team = extract_team_season_data(season)
+    time.sleep(sleeping_time)
+    
+    mvp = extract_mvp_vote_data(season)
+    time.sleep(sleeping_time)
+
+    return ExtractedData(per_game, advanced, team, mvp)
 
 
 def extract_per_game_season_data(season: int) -> pd.DataFrame:

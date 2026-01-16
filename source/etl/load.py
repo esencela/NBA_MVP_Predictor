@@ -1,7 +1,6 @@
 import psycopg2 # pyright: ignore[reportMissingModuleSource]
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from source.db.connection import get_engine
-from sqlalchemy import text # pyright: ignore[reportMissingImports]
 
 def load_to_database(df: pd.DataFrame, table_name: str, schema: str):
     """
