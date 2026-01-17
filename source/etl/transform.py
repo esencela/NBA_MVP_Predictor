@@ -110,23 +110,6 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def merge_player_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Merges cleaned per-game player data and advanced player statistics.
-    
-    Params:
-        per_game_data (pd.DataFrame): DataFrame holding cleaned per-game player statistics
-        advanced_data (pd.DataFrame): DataFrame holding cleaned advanced player statistics
-
-    Returns:
-        pd.DataFrame: Merged DataFrame holding both per-game and advanced player statistics
-    """
-
-    df = per_game_data.merge(advanced_data, how='inner', on=['Player', 'Team'])
-
-    return df
-
-
 def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame:
     """
     Cleans and concatenates the team standings datasets, only keeping Team Name (Team) and Win Rate (W/L%) columns and mapping a Team Code (Code) onto the data.
@@ -140,8 +123,15 @@ def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame
     df_east = df_tuple[0].copy()
     df_west = df_tuple[1].copy()
 
-    df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace('*', '')
-    df_west['Western Conference'] = df_west['Western Conference'].str.replace('*', '')
+    filter = df_east['Eastern Conference'].str.contains('Division')
+    df_east = df_east[~filter]
+
+    filter = df_west['Western Conference'].str.contains('Division')
+    df_west = df_west[~filter]
+
+    # Keep only letters and spaces then strip extra spaces
+    df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
+    df_west['Western Conference'] = df_west['Western Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
 
     df_east = df_east.rename({'Eastern Conference': 'Team'}, axis=1)
     df_west = df_west.rename({'Western Conference': 'Team'}, axis=1)
@@ -152,6 +142,8 @@ def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame
     df_west = df_west[columns_to_keep]
 
     df_ovr = pd.concat([df_east, df_west])
+
+    df_ovr['W/L%'] = df_ovr['W/L%'].astype('float')
 
     # Return a three letter code for a specified team name
     def team_code(team_name):
@@ -187,8 +179,8 @@ def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame
                  'Portland Trail Blazers': 'POR',
                  'Houston Rockets': 'HOU',
                  'San Antonio Spurs': 'SAS',
-                 'New Orleans Hornets': 'NOP',
-                 'Seattle Supersonics': 'SEA',
+                 'New Orleans Hornets': 'NOH',
+                 'Seattle SuperSonics': 'SEA',
                  'New Orleans/Oklahoma City Hornets': 'NOK'}
         
         return codes[team_name]

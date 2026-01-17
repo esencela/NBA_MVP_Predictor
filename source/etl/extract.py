@@ -2,6 +2,9 @@ import requests # pyright: ignore[reportMissingModuleSource]
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from typing import NamedTuple
 import time
+from source.config.settings import (
+    CURRENT_SEASON
+)
 
 class ExtractedData(NamedTuple):
     per_game: pd.DataFrame
@@ -128,9 +131,16 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     """
 
     url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
+
+    # Return empty dataframe - Current Season will have no mvp voting data
+    if (season == CURRENT_SEASON):
+        return pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
+                                     'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48'])
+    
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
+
     df = tables[0]
 
     df.reset_index(drop=True, inplace=True)
