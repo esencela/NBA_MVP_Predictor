@@ -13,7 +13,7 @@ class ExtractedData(NamedTuple):
     mvp: pd.DataFrame
 
 
-def extract(season: int) -> ExtractedData:
+def extract_season_data(season: int) -> ExtractedData:
     """
     Extract NBA datasets for a given season from Basketball Reference, implementing sleep to avoid request limits.
 

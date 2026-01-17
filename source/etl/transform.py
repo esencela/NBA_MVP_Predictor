@@ -2,7 +2,7 @@ import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from sklearn.preprocessing import StandardScaler # pyright: ignore[reportMissingModuleSource]
 
 
-def transform(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_team: pd.DataFrame, raw_mvp: pd.DataFrame, season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+def transform_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_team: pd.DataFrame, raw_mvp: pd.DataFrame, season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Transform raw NBA data sources into a model-ready, season-specific feature table.
 

@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from source.etl.extract import extract
-from source.etl.transform import transform
+from source.etl.extract import extract_season_data
+from source.etl.transform import transform_data
 from source.etl.load import load_to_database
 from datetime import datetime
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
@@ -15,8 +15,8 @@ def etl_pipeline():
     stats_list = []
 
     for season in range(MIN_SEASON, CURRENT_SEASON + 1):
-        season_data = extract(season)
-        features_data, stats_data = transform(season_data.per_game, 
+        season_data = extract_season_data(season)
+        features_data, stats_data = transform_data(season_data.per_game, 
                                                 season_data.advanced, 
                                                 season_data.team, 
                                                 season_data.mvp, 
