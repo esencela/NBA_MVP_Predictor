@@ -5861,3 +5861,31 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'source'
 [2026-01-17T21:48:11.695+0000] {processor.py:842} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_dag.py
 [2026-01-17T21:48:11.719+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/etl_dag.py took 0.071 seconds
+[2026-01-17T21:48:41.867+0000] {processor.py:161} INFO - Started process (PID=3012) to work on /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:48:41.868+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/etl_dag.py for tasks to queue
+[2026-01-17T21:48:41.870+0000] {logging_mixin.py:188} INFO - [2026-01-17T21:48:41.870+0000] {dagbag.py:538} INFO - Filling up the DagBag from /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:48:41.901+0000] {logging_mixin.py:188} INFO - [2026-01-17T21:48:41.895+0000] {dagbag.py:348} ERROR - Failed to import: /opt/airflow/dags/etl_dag.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/dagbag.py", line 344, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 843, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_dag.py", line 3, in <module>
+    from source.etl.extract import extract
+ModuleNotFoundError: No module named 'source'
+[2026-01-17T21:48:41.904+0000] {processor.py:842} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:48:41.930+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/etl_dag.py took 0.067 seconds
+[2026-01-17T21:49:12.110+0000] {processor.py:161} INFO - Started process (PID=3020) to work on /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:49:12.112+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/etl_dag.py for tasks to queue
+[2026-01-17T21:49:12.115+0000] {logging_mixin.py:188} INFO - [2026-01-17T21:49:12.115+0000] {dagbag.py:538} INFO - Filling up the DagBag from /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:49:12.147+0000] {logging_mixin.py:188} INFO - [2026-01-17T21:49:12.141+0000] {dagbag.py:348} ERROR - Failed to import: /opt/airflow/dags/etl_dag.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/dagbag.py", line 344, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 843, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_dag.py", line 3, in <module>
+    from source.etl.extract import extract
+ModuleNotFoundError: No module named 'source'
+[2026-01-17T21:49:12.149+0000] {processor.py:842} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_dag.py
+[2026-01-17T21:49:12.190+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/etl_dag.py took 0.085 seconds
