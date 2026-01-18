@@ -10,11 +10,12 @@ from source.config.settings import (
     MIN_SEASON
 )
 
+
 def etl_pipeline():
     features_list = []
     stats_list = []
 
-    for season in range(MIN_SEASON, CURRENT_SEASON):
+    for season in range(MIN_SEASON, CURRENT_SEASON + 1):
         season_data = extract_season_data(season)
         features_data, stats_data = transform_data(season_data.per_game, 
                                                 season_data.advanced, 
@@ -30,6 +31,7 @@ def etl_pipeline():
 
     load_to_database(df_features, 'player_features', 'stats')
     load_to_database(df_stats, 'player_stats', 'stats')
+
 
 default_args = {
     'owner': 'airflow',

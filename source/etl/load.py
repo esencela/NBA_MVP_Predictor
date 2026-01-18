@@ -24,7 +24,13 @@ def load_to_database(df: pd.DataFrame, table_name: str, schema: str):
             index=False)
 
 
-def check_schema(engine, schema: set):
+def check_schema(engine, schema: str):
+    """
+    Creates a schema in target database if it does not exist.
 
+    Params:
+        engine (sqlalchemy.engine.Engine): The engine connecting to the PostgreSQL database.
+        schema (str): Name of schema in database.
+    """
     with engine.begin() as conn:
         conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS {schema}'))
