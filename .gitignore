@@ -1,4 +1,6 @@
 __pycache__/
 
+airflow/logs/
+
 .env
 .venv
