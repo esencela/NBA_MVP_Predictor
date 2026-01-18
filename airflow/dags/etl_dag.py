@@ -14,7 +14,7 @@ def etl_pipeline():
     features_list = []
     stats_list = []
 
-    for season in range(CURRENT_SEASON, MIN_SEASON):
+    for season in range(MIN_SEASON, CURRENT_SEASON):
         season_data = extract_season_data(season)
         features_data, stats_data = transform_data(season_data.per_game, 
                                                 season_data.advanced, 

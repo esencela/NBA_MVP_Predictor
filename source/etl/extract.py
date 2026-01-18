@@ -1,6 +1,7 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from typing import NamedTuple, Tuple, List
 import time
+import logging
 from source.config.settings import (
     CURRENT_SEASON
 )
@@ -43,6 +44,8 @@ def extract_season_data(season: int) -> ExtractedData:
     
     mvp = extract_mvp_vote_data(season)
     time.sleep(sleeping_time)
+
+    logging.info(f'Extracted data for {season} season.')
 
     return ExtractedData(per_game, advanced, team, mvp)
 
