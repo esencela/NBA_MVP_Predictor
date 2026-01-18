@@ -1,10 +1,10 @@
-import requests # pyright: ignore[reportMissingModuleSource]
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from typing import NamedTuple
+from typing import NamedTuple, Tuple, List
 import time
 from source.config.settings import (
     CURRENT_SEASON
 )
+
 
 class ExtractedData(NamedTuple):
     per_game: pd.DataFrame
@@ -95,7 +95,7 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
     return df
 
 
-def extract_team_season_data(season: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+def extract_team_season_data(season: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Extract NBA team statistics for a given season from Basketball Reference.
 
@@ -148,7 +148,7 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     return df
 
 
-def retrieve_tables_from_url(url: str) -> list[pd.DataFrame]:
+def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
     """
     Retrieve all HTML tables from a specified URL
     
