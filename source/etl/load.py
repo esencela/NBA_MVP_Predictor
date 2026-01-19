@@ -1,6 +1,6 @@
 import psycopg2 # pyright: ignore[reportMissingModuleSource]
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from sqlalchemy import text
+from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from source.db.connection import get_engine
 
 
