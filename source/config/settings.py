@@ -10,3 +10,6 @@ ML_POSTGRES_PASSWORD = os.getenv("ML_POSTGRES_PASSWORD")
 
 CURRENT_SEASON = 2026
 MIN_SEASON = 2003
+
+MODEL_PATH = "/opt/airflow/models/mvp_model.pkl"
+os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)

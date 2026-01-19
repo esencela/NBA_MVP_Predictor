@@ -1,4 +1,5 @@
-import lightgbm as lgb
+import lightgbm as lgb # pyright: ignore[reportMissingImports]
+import numpy as np # pyright: ignore[reportMissingImports]
 import pickle
 
 class LGBMModel():
@@ -35,7 +36,8 @@ class LGBMModel():
     
     def predict(self, X):
         yhat_class = self.classifier.predict(X)
-        yhat = self.regressor * yhat_class
+        yhat_regr = np.clip(self.regressor.predict(X), a_min=0, a_max=None)
+        yhat = yhat_class * yhat_regr
 
         return yhat
     
