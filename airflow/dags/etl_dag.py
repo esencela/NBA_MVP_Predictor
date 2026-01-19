@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator # pyright: ignore[reportMissingImports]
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_data
 from source.etl.load import load_to_database
