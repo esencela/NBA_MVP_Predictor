@@ -40,6 +40,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
+
 etl_dag = DAG(
     dag_id='etl_dag',
     default_args=default_args,
@@ -48,6 +49,7 @@ etl_dag = DAG(
     start_date=datetime(2026, 1, 18),
     catchup=False
 )
+
 
 run_etl = PythonOperator(
     task_id='run_etl_pipeline',
