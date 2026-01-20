@@ -8,6 +8,8 @@ from source.config.settings import (
 
 
 def train_model():
+    """Trains model using historic season data and saves model to MODEL_PATH."""
+
     query = f'SELECT * FROM stats.player_features WHERE "Season" < {CURRENT_SEASON}'
 
     df = get_data(query)
@@ -21,5 +23,5 @@ def train_model():
     y_regr = df['Share']
 
     model = LGBMModel()
-    model.fit(X_train, y_class, X_train, y_regr)
+    model.fit(X_train, y_class, y_regr)
     model.save(MODEL_PATH)

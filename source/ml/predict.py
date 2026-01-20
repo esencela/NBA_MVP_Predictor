@@ -7,6 +7,18 @@ from source.config.settings import (
 
 
 def get_predictions():
+    """
+    Predicts MVP vote share using saved model and current season data.
+
+    This function generates predictions for current season data:
+    - Loads model from MODEL_PATH
+    - Queries PostgreSQL for current season stats
+    - Uses model to generate predictions
+    - Stores predictions in a DataFrame
+
+    Returns:
+        pd.DataFrame: DataFrame holding model predictions along with player and season info.
+    """
     model = LGBMModel.load(MODEL_PATH)
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" = {CURRENT_SEASON}'

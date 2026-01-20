@@ -13,7 +13,8 @@ def get_engine():
     return create_engine(f'postgresql+psycopg2://airflow:airflow@postgres:5432/nba_mvp')
 
 
-def get_data(query: str) -> pd.DataFrame:
+def query_data(query: str) -> pd.DataFrame:
+    """Queries PostgreSQL and returns a dataframe of results."""
 
     engine = get_engine()
 
