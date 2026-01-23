@@ -70,8 +70,7 @@ def etl_pipeline():
     @task
     def wait_for_extract(paths: dict) -> dict:
         timeout = 60
-        interval = 5
-        time_waited = 0
+        interval = 5        
 
         for file_path in [
             paths['per_game'],
@@ -81,6 +80,7 @@ def etl_pipeline():
             paths['mvp']
         ]:
             p = Path(file_path)
+            time_waited = 0
 
             while not p.exists():
                 if time_waited >= timeout:
@@ -122,13 +122,13 @@ def etl_pipeline():
     def wait_for_transform(paths: dict) -> dict:
         timeout = 60
         interval = 5
-        time_waited = 0
 
         for file_path in [
             paths['features'],
             paths['stats']
         ]:
             p = Path(file_path)
+            time_waited = 0
 
             while not p.exists():
                 if time_waited >= timeout:
