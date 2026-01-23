@@ -4,3 +4,4 @@ scikit-learn
 sqlalchemy
 psycopg2-binary
 lightgbm
+pyarrow

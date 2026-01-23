@@ -38,6 +38,7 @@ class LGBMModel():
             y_class (pd.DataFrame): DataFrame holding target column for classifier (Whether a player has votes).
             y_regr (pd.DataFrame): DataFrame holding target column for regressor (MVP vote share).
         """
+
         self.classifier.fit(X_train, y_class)
         self.regressor.fit(X_train, y_regr)
 
@@ -52,6 +53,7 @@ class LGBMModel():
         Returns:
             np.array: The predicted values.
         """
+
         yhat_class = self.classifier.predict(X)
         yhat_regr = np.clip(self.regressor.predict(X), a_min=0, a_max=None)
         yhat = yhat_class * yhat_regr
@@ -61,6 +63,7 @@ class LGBMModel():
 
     def save(self, path: str):
         """Saves model as a pickle file to a given path."""
+
         with open(path, 'wb') as file:
             pickle.dump(self, file)
 
@@ -68,6 +71,7 @@ class LGBMModel():
     @staticmethod
     def load(path: str):
         """Loads model from a given path."""
+        
         with open(path, 'rb') as file:
             model = pickle.load(file)
         

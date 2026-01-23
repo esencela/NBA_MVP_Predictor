@@ -75,6 +75,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ./requirements.txt:/requirements.txt
     - ./models:/opt/airflow/models
+    - ./data:/opt/airflow/data
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -109,6 +110,8 @@ services:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ../source:/opt/airflow/source
+    - ./scripts:/opt/airflow/scripts  
+    entrypoint: bash -c "bash /opt/airflow/scripts/airflow-init.sh && exec airflow webserver"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -128,7 +131,7 @@ services:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ../source:/opt/airflow/source
+    - ../source:/opt/airflow/source  
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s

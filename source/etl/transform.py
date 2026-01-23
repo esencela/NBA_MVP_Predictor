@@ -1,9 +1,8 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from sklearn.preprocessing import StandardScaler # pyright: ignore[reportMissingModuleSource]
-from typing import Tuple
 
 
-def transform_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_team: pd.DataFrame, raw_mvp: pd.DataFrame, season: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def transform_season_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_team: pd.DataFrame, raw_mvp: pd.DataFrame, season: int) -> dict:
     """
     Transform raw NBA data sources into a model-ready, season-specific feature table.
 
@@ -24,8 +23,8 @@ def transform_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_tea
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame]: A tuple containing a cleaned, enriched, and scaled player-level feature table suitable for training models [0],
-                                           and a cleaned dataset of unscaled player stats for reporting [1]
+        dict: A dictionary containing a cleaned, enriched, and scaled player-level feature table suitable for training models [features],
+                                           and a cleaned dataset of unscaled player stats for reporting [stats]
     """
 
     player_data = clean_per_game_data(raw_player)
@@ -45,7 +44,10 @@ def transform_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_tea
     df_stats = transformed_data[stats_order]
     df_features = enriched_data[feature_order]
 
-    return df_features, df_stats
+    return {
+        'features': df_features,
+        'stats': df_stats
+    }
 
 
 def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
@@ -111,18 +113,18 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def clean_team_data(df_tuple: tuple[pd.DataFrame, pd.DataFrame]) -> pd.DataFrame:
+def clean_team_data(dict_team: dict) -> pd.DataFrame:
     """
     Cleans and concatenates the team standings datasets, only keeping Team Name (Team) and Win Rate (W/L%) columns and mapping a Team Code (Code) onto the data.
     
     Params:
-        df_tuple (tuple[pd.DataFrame, pd.DataFrame): Tuple of Eastern and Western Conference team data (East, West).
+        df_team (dict): Dictionary holding Eastern and Western Conference team data (east, west).
 
     Returns:
         pd.DataFrame: Cleaned and concatenated DataFrame with only the specified columns.
     """
-    df_east = df_tuple[0].copy()
-    df_west = df_tuple[1].copy()
+    df_east = dict_team['east'].copy()
+    df_west = dict_team['west'].copy()
 
     filter = df_east['Eastern Conference'].str.contains('Division')
     df_east = df_east[~filter]

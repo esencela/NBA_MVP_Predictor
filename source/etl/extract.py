@@ -1,20 +1,12 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from typing import NamedTuple, Tuple, List
+from typing import List
 import time
 import logging
 from source.config.settings import (
     CURRENT_SEASON
 )
 
-
-class ExtractedData(NamedTuple):
-    per_game: pd.DataFrame
-    advanced: pd.DataFrame
-    team: pd.DataFrame
-    mvp: pd.DataFrame
-
-
-def extract_season_data(season: int) -> ExtractedData:
+def extract_season_data(season: int) -> dict:
     """
     Extract NBA datasets for a given season from Basketball Reference, implementing sleep to avoid request limits.
 
@@ -28,7 +20,7 @@ def extract_season_data(season: int) -> ExtractedData:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        ExtractedData: NamedTuple that holds all dataframes (per_game, advanced, team, mvp)
+        dict: Dictionary that holds all dataframes (per_game, advanced, team, mvp).
     """
 
     sleeping_time = 5
@@ -47,7 +39,12 @@ def extract_season_data(season: int) -> ExtractedData:
 
     logging.info(f'Extracted data for {season} season')
 
-    return ExtractedData(per_game, advanced, team, mvp)
+    return {
+        'per_game': per_game,
+        'advanced': advanced,
+        'team': team,
+        'mvp': mvp
+    }
 
 
 def extract_per_game_season_data(season: int) -> pd.DataFrame:
@@ -98,7 +95,7 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
     return df
 
 
-def extract_team_season_data(season: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def extract_team_season_data(season: int) -> dict:
     """
     Extract NBA team statistics for a given season from Basketball Reference.
 
@@ -106,7 +103,7 @@ def extract_team_season_data(season: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame]: Raw team statistics for the given season (East, West).
+        dict: Raw team statistics for the given season (east, west).
     """
 
     url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
@@ -119,7 +116,10 @@ def extract_team_season_data(season: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_east.reset_index(drop=True, inplace=True)
     df_west.reset_index(drop=True, inplace=True)
 
-    return df_east, df_west
+    return {
+        'east': df_east,
+        'west': df_west
+    }
 
 
 def extract_mvp_vote_data(season: int) -> pd.DataFrame:
@@ -148,7 +148,7 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
 
     df.reset_index(drop=True, inplace=True)
 
-    return df
+    return flatten_columns(df)
 
 
 def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
@@ -171,3 +171,11 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
         raise ValueError(f'No tables found in url: {url}')
     
     return tables
+
+
+def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Flattens column names in a DataFrame to eliminate tuple values (e.g. ('Voting', 'Pts') -> 'Voting_Pts')"""
+
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = ['_'.join(col) for col in df.columns.values]
+    return df

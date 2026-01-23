@@ -1,6 +1,6 @@
 from source.ml.model import LGBMModel
 from source.ml.preprocessing import add_features
-from source.db.connection import get_data
+from source.db.connection import query_data
 from source.config.settings import (
     CURRENT_SEASON,
     MODEL_PATH
@@ -12,7 +12,7 @@ def train_model():
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" < {CURRENT_SEASON}'
 
-    df = get_data(query)
+    df = query_data(query)
 
     df = add_features(df)
 
