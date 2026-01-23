@@ -1,5 +1,4 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
-from airflow.sensors.filesystem import FileSensor # pyright: ignore[reportMissingImports]
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
 from source.etl.load import load_to_database
@@ -63,7 +62,7 @@ def etl_pipeline():
             season (int): The NBA season year (e.g., 2023 for the 2022-2023 season).
 
         Returns:
-            dict: Paths to the saved parquet files for each dataset.
+            dict: Paths to the saved parquet files for each dataset and season.
                 {
                     'per_game': str,
                     'advanced': str,
@@ -71,7 +70,8 @@ def etl_pipeline():
                         'east': str,
                         'west': str
                     },
-                    'mvp': str
+                    'mvp': str,
+                    'season': int
                 }
         """
 
@@ -93,11 +93,11 @@ def etl_pipeline():
         data_dir = Path('/opt/airflow/data')
         data_dir.mkdir(parents=True, exist_ok=True)
 
-        df_per_game.to_parquet(per_game_path)
-        df_advanced.to_parquet(advanced_path)
-        df_east.to_parquet(east_path)
-        df_west.to_parquet(west_path)
-        df_mvp.to_parquet(mvp_path)
+        df_per_game.to_parquet(per_game_path, index=False)
+        df_advanced.to_parquet(advanced_path, index=False)
+        df_east.to_parquet(east_path, index=False)
+        df_west.to_parquet(west_path, index=False)
+        df_mvp.to_parquet(mvp_path, index=False)
 
         return {
             'per_game': per_game_path,
@@ -106,7 +106,8 @@ def etl_pipeline():
                 'east': east_path,
                 'west': west_path
             },
-            'mvp': mvp_path
+            'mvp': mvp_path,
+            'season': season
         }
     
 
@@ -151,7 +152,7 @@ def etl_pipeline():
 
 
     @task
-    def transform(paths: dict, season: int) -> dict:
+    def transform(paths: dict) -> dict:
         """
         Transforms raw data into a into features dataset for model training and a stats dataset for serving.
         
@@ -160,7 +161,6 @@ def etl_pipeline():
 
         Params:
             paths (dict): Paths to the extracted parquet files.
-            season (int): The NBA season year.
 
         Returns:
             dict: Paths to the transformed parquet files.
@@ -177,6 +177,7 @@ def etl_pipeline():
             'west': pd.read_parquet(paths['team']['west'])
         }
         mvp = pd.read_parquet(paths['mvp'])
+        season = paths['season']
 
         transformed_data = transform_season_data(per_game, advanced, team, mvp, season)
 
@@ -186,8 +187,8 @@ def etl_pipeline():
         features_path = f'/opt/airflow/data/features_{season}.parquet'
         stats_path = f'/opt/airflow/data/stats_{season}.parquet'
         
-        features_data.to_parquet(features_path)
-        stats_data.to_parquet(stats_path)
+        features_data.to_parquet(features_path, index=False)
+        stats_data.to_parquet(stats_path, index=False)
 
         return {
             'features': features_path,
@@ -257,7 +258,6 @@ def etl_pipeline():
     def clean_up():
         """
         Remove intermediate parquet files in the data directory after ETL process completion.
-
         Executes only if all upstream tasks succeed, allowing for debugging in case of failures.
         """
 
@@ -270,13 +270,13 @@ def etl_pipeline():
                 item.unlink()
 
 
-    seasons = list(range(CURRENT_SEASON - 1, CURRENT_SEASON + 1))
+    seasons = list(range(MIN_SEASON, CURRENT_SEASON + 1))
 
     extract_paths = extract.expand(season=seasons)
 
     extract_wait = wait_for_extract.expand(paths=extract_paths)
 
-    transform_paths = transform.expand(paths=extract_wait, season=seasons)
+    transform_paths = transform.expand(paths=extract_wait)
 
     transform_wait = wait_for_transform.expand(paths=transform_paths)
 
