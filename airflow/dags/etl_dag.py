@@ -29,9 +29,52 @@ default_args = {
     catchup=False
 )
 def etl_pipeline():
+    """
+    ETL Pipeline DAG for NBA MVP Predictor project.
+
+    This DAG extracts season data through web scraping, stages raw datasets as parquet files,
+    transforms the data to create a features dataset for model training and a stats dataset for serving,
+    and loads the final datasets into a PostgreSQL database.
+
+    Steps:
+    1. Extract season data for specified seasons and save as parquet files.
+    2. Wait for the extraction to complete and verify file existence.
+    3. Transform the extracted data to create features and stats datasets.
+    4. Wait for the transformation to complete and verify file existence.
+    5. Load the final datasets into the PostgreSQL database.
+    6. Clean up temporary files.
+
+    The pipeline is designed to handle multiple seasons in parallel using Airflow's task mapping feature,
+    and ensures idempotency by replacing existing data in the PostgreSQL database.
+    """
 
     @task(pool='api_pool')
     def extract(season: int) -> dict:
+        """
+        Extract season data and save as parquet files for transformation.
+
+        This function fetches:
+        - Per Game statistics
+        - Advanced statistics
+        - Team statistics (Eastern and Western Conferences)
+        - MVP voting results
+
+        Params:
+            season (int): The NBA season year (e.g., 2023 for the 2022-2023 season).
+
+        Returns:
+            dict: Paths to the saved parquet files for each dataset.
+                {
+                    'per_game': str,
+                    'advanced': str,
+                    'team': {
+                        'east': str,
+                        'west': str
+                    },
+                    'mvp': str
+                }
+        """
+
         data = extract_season_data(season)
 
         df_per_game = data['per_game']
@@ -69,6 +112,22 @@ def etl_pipeline():
 
     @task
     def wait_for_extract(paths: dict) -> dict:
+        """
+        Wait for extracted parquet files to be available.
+
+        Checks filesystem for the existence of extracted parquet files before downstream transformation.
+        Raises FileNotFoundError if files are not found within the timeout period.
+
+        Params:
+            paths (dict): Paths to the extracted parquet files.
+
+        Returns:
+            dict: The same paths dictionary if all files are found.
+
+        Raises:
+            FileNotFoundError: If any of the expected files are not found within the timeout period.
+        """
+
         timeout = 60
         interval = 5        
 
@@ -93,6 +152,24 @@ def etl_pipeline():
 
     @task
     def transform(paths: dict, season: int) -> dict:
+        """
+        Transforms raw data into a into features dataset for model training and a stats dataset for serving.
+        
+        Reads the extracted parquet files, processes the data, saves the transformed datasets as parquet files,
+        and returns the paths to the transformed files.
+
+        Params:
+            paths (dict): Paths to the extracted parquet files.
+            season (int): The NBA season year.
+
+        Returns:
+            dict: Paths to the transformed parquet files.
+                {
+                    'features': str,
+                    'stats': str
+                }
+        """
+
         per_game = pd.read_parquet(paths['per_game'])
         advanced = pd.read_parquet(paths['advanced'])
         team = {
@@ -120,6 +197,21 @@ def etl_pipeline():
 
     @task
     def wait_for_transform(paths: dict) -> dict:
+        """
+        Wait for transformed parquet files to be available.
+
+        Checks filesystem for the existence of transformed parquet files before downstream loading.
+        Raises FileNotFoundError if files are not found within the timeout period.
+
+        Params:
+            paths (dict): Paths to the transformed parquet files.
+        Returns:
+            dict: The same paths dictionary if all files are found.
+
+        Raises:
+            FileNotFoundError: If any of the expected files are not found within the timeout period.
+        """
+
         timeout = 60
         interval = 5
 
@@ -141,6 +233,16 @@ def etl_pipeline():
 
     @task 
     def load(paths: list[dict]):
+        """
+        Load the final datasets into the PostgreSQL database.
+
+        Reads the transformed parquet files for all seasons, concatenates them into single DataFrames,
+        and loads them into the PostgreSQL database, replacing existing data.
+
+        Params:
+            paths (list[dict]): List of paths to the transformed parquet files for each season.
+        """
+
         features_list = [pd.read_parquet(path['features']) for path in paths]
         stats_list = [pd.read_parquet(path['stats']) for path in paths]
 
@@ -153,6 +255,12 @@ def etl_pipeline():
 
     @task(trigger_rule='all_success')
     def clean_up():
+        """
+        Remove intermediate parquet files in the data directory after ETL process completion.
+
+        Executes only if all upstream tasks succeed, allowing for debugging in case of failures.
+        """
+
         directory = Path('/opt/airflow/data')
 
         for item in directory.iterdir():
