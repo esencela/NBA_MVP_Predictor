@@ -4,7 +4,7 @@ from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from source.db.connection import get_engine
 
 
-def load_to_database(df: pd.DataFrame, table_name: str, schema: str):
+def load_to_database(df: pd.DataFrame, table_name: str, schema: str, append: bool = False):
     """
     Loads a given DataFrame into PostgreSQL database.
     
@@ -12,15 +12,21 @@ def load_to_database(df: pd.DataFrame, table_name: str, schema: str):
         df (pd.DataFrame): DataFrame to be loaded into database.
         table_name (str): Name of target table in database.
         schema (str): Name of schema of target table in database.
+        append (bool): If True, appends data to existing table; if False, replaces the table.
     """
     engine = get_engine()
 
     check_schema(engine, schema)
 
+    if append:
+        if_exists_option = 'append'
+    else:
+        if_exists_option = 'replace'
+
     df.to_sql(table_name,
             engine, 
             schema=schema,
-            if_exists='replace', 
+            if_exists=if_exists_option,
             index=False)
 
 

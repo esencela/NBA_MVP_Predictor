@@ -39,6 +39,7 @@ def ml_pipeline():
     @task
     def train():
         """Trains the machine learning model."""
+
         train_model()
 
 
@@ -50,6 +51,7 @@ def ml_pipeline():
         Returns:
             str: Path to the saved predictions parquet file.
         """
+
         file_path = f'/opt/airflow/data/predictions.parquet'
         predictions = get_predictions()
         predictions.to_parquet(file_path, index=False)
@@ -65,6 +67,7 @@ def ml_pipeline():
         Params:
             file_path (str): Path to the predictions parquet file.
         """
+        
         predictions = pd.read_parquet(file_path)
         load_to_database(predictions, 'player_predictions', 'predictions')
 
