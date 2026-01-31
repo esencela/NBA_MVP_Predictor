@@ -1,7 +1,25 @@
 import streamlit as st
+import sys
+import os
+
+# Add the project root to sys.path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+import pandas as pd
+from source.db.connection import query_data
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql+psycopg2://airflow:airflow@localhost:5433/nba_mvp")
 
 st.set_page_config(
     page_title="NBA MVP Predictor"
 )
 
-st.title('Hello World')
+st.title('Leaderboard')
+
+query = "SELECT * FROM serving.leaderboard"
+df = pd.read_sql(query, engine)
+
+st.dataframe(df)
