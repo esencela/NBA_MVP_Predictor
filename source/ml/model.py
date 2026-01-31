@@ -45,10 +45,10 @@ class LGBMModel():
     
     def predict(self, X):
         """
-        Generates predictions for sample dataset
+        Generates predictions for sample dataset.
         
         Params:
-            X (pd.DataFrame): DataFrame holding feature columns of sample dataset
+            X (pd.DataFrame): DataFrame holding feature columns of sample dataset.
 
         Returns:
             np.array: The predicted values.
