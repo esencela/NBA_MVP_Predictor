@@ -73,9 +73,12 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ../source:/opt/airflow/source
+    - ./scripts:/opt/airflow/scripts
     - ./requirements.txt:/requirements.txt
     - ./models:/opt/airflow/models
     - ./data:/opt/airflow/data
+    - ../sql:/opt/airflow/sql
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -105,12 +108,6 @@ services:
     command: webserver
     ports:
       - "8080:8080"
-    volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
-    - ../source:/opt/airflow/source
-    - ./scripts:/opt/airflow/scripts  
     entrypoint: bash -c "bash /opt/airflow/scripts/airflow-init.sh && exec airflow webserver"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
@@ -127,11 +124,6 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: bash -c "rm -f /opt/airflow/airflow-*.pid && airflow scheduler"
-    volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
-    - ../source:/opt/airflow/source  
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s

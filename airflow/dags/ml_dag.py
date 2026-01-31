@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from source.ml.train import train_model
 from source.ml.predict import get_predictions
 from source.etl.load import load_to_database
+from source.db.utils import create_serving_view
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -71,6 +72,15 @@ def ml_pipeline():
         predictions = pd.read_parquet(file_path)
         load_to_database(predictions, 'player_predictions', 'predictions')
 
+    
+    @task
+    def create_view():
+        """
+        Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
+        """
+
+        create_serving_view()
+
 
     @task(trigger_rule='all_success')
     def clean_up():
@@ -94,7 +104,7 @@ def ml_pipeline():
 
     train_task >> predictions
 
-    load(predictions) >> clean_up()
+    load(predictions) >> create_view() >> clean_up()
 
 
 ml_dag = ml_pipeline()

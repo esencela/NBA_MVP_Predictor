@@ -4,7 +4,7 @@ from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
 from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
-from source.db.utils import remove_season_data
+from source.db.utils import remove_season_data, create_serving_view
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -191,6 +191,15 @@ def update_pipeline():
         load_to_database(predictions, 'player_predictions', 'predictions')
 
 
+    @task
+    def create_view():
+        """
+        Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
+        """
+
+        create_serving_view()
+
+
     @task(trigger_rule='all_success')
     def clean_up():
         """
@@ -215,7 +224,7 @@ def update_pipeline():
 
     load_player_data(transform_paths) >> predictions
 
-    load_predictions(predictions) >> clean_up()
+    load_predictions(predictions) >> create_view() >> clean_up()
 
 
 update_dag = update_pipeline()
