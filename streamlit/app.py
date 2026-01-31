@@ -7,9 +7,9 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import pandas as pd
+import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from source.db.connection import query_data
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine # pyright: ignore[reportMissingImports]
 
 engine = create_engine("postgresql+psycopg2://airflow:airflow@localhost:5433/nba_mvp")
 
