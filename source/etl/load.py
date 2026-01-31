@@ -23,6 +23,10 @@ def load_to_database(df: pd.DataFrame, table_name: str, schema: str, append: boo
     else:
         if_exists_option = 'replace'
 
+        # Ensure cascade for tables that have dependencies
+        with engine.begin() as conn:
+            conn.execute(f'DROP TABLE IF EXISTS {schema}.{table_name} CASCADE;')
+
     df.to_sql(table_name,
             engine, 
             schema=schema,
