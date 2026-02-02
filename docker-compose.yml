@@ -69,16 +69,16 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     # _PIP_ADDITIONAL_REQUIREMENTS: -r /requirements.txt
   volumes:
-    - ./airflow/dags:/opt/airflow/dags
-    - ./airflow/logs:/opt/airflow/logs
-    - ./airflow/config:/opt/airflow/config
-    - ./airflow/plugins:/opt/airflow/plugins
-    - ./source:/opt/airflow/source
-    - ./airflow/scripts:/opt/airflow/scripts
-    - ./airflow/requirements.txt:/requirements.txt
-    - ./airflow/models:/opt/airflow/models
-    - ./airflow/data:/opt/airflow/data
-    - ./sql:/opt/airflow/sql
+    - ${PWD}/airflow/dags:/opt/airflow/dags
+    - ${PWD}/airflow/logs:/opt/airflow/logs
+    - ${PWD}/airflow/config:/opt/airflow/config
+    - ${PWD}/airflow/plugins:/opt/airflow/plugins
+    - ${PWD}/source:/opt/airflow/source
+    - ${PWD}/airflow/scripts:/opt/airflow/scripts
+    - ${PWD}/airflow/requirements.txt:/requirements.txt
+    - ${PWD}/airflow/models:/opt/airflow/models
+    - ${PWD}/airflow/data:/opt/airflow/data
+    - ${PWD}/sql:/opt/airflow/sql
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -199,15 +199,17 @@ services:
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+      - ${PWD}/airflow:/sources
 
   streamlit:
     build: ./streamlit
     ports:
       - "8501:8501"
+    environment:
+      PYTHONPATH: /app:/scripts
     volumes:
-      - ./streamlit:/app
-      - ./source:/app/source
+      - ${PWD}/streamlit:/app
+      - ${PWD}/source:/scripts/source
     depends_on:
       - postgres
 
