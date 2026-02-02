@@ -205,6 +205,9 @@ services:
     build: ./streamlit
     ports:
       - "8501:8501"
+    volumes:
+      - ./streamlit:/app
+      - ./source:/app/source
     depends_on:
       - postgres
 
