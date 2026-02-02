@@ -11,7 +11,7 @@ import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from source.db.connection import query_data
 from sqlalchemy import create_engine # pyright: ignore[reportMissingImports]
 
-engine = create_engine("postgresql+psycopg2://airflow:airflow@localhost:5433/nba_mvp")
+#engine = create_engine("postgresql+psycopg2://airflow:airflow@postgres:5432/nba_mvp")
 
 st.set_page_config(
     page_title="NBA MVP Predictor"
@@ -20,6 +20,7 @@ st.set_page_config(
 st.title('Leaderboard')
 
 query = "SELECT * FROM serving.leaderboard"
-df = pd.read_sql(query, engine)
+
+df = query_data(query)
 
 st.dataframe(df)
