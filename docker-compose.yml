@@ -50,7 +50,7 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.8.1}
-  build: .
+  build: ./airflow
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: SequentialExecutor
@@ -69,16 +69,16 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     # _PIP_ADDITIONAL_REQUIREMENTS: -r /requirements.txt
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ../source:/opt/airflow/source
-    - ./scripts:/opt/airflow/scripts
-    - ./requirements.txt:/requirements.txt
-    - ./models:/opt/airflow/models
-    - ./data:/opt/airflow/data
-    - ../sql:/opt/airflow/sql
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/config:/opt/airflow/config
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./source:/opt/airflow/source
+    - ./airflow/scripts:/opt/airflow/scripts
+    - ./airflow/requirements.txt:/requirements.txt
+    - ./airflow/models:/opt/airflow/models
+    - ./airflow/data:/opt/airflow/data
+    - ./sql:/opt/airflow/sql
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
