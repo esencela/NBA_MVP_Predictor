@@ -10,6 +10,6 @@ st.title('Leaderboard')
 
 query = "SELECT * FROM serving.leaderboard"
 
-df = query_data(query)
+df = query_data(query, user='app')
 
 st.dataframe(df)

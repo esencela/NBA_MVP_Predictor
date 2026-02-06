@@ -24,10 +24,10 @@ def get_predictions():
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" = {CURRENT_SEASON}'
 
-    X_current = query_data(query)
+    X_current = query_data(query, user='ml')
 
     feature_columns = ['MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'W/L%', 'VORP_W/L']
-    id_columns = ['Player', 'Season']
+    id_columns = ['Season', 'Player']
 
     predictions = X_current[id_columns]
 

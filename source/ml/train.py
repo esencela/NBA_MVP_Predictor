@@ -12,7 +12,7 @@ def train_model():
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" < {CURRENT_SEASON}'
 
-    df = query_data(query)
+    df = query_data(query, user='ml')
 
     df = add_features(df)
 

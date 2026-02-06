@@ -250,8 +250,8 @@ def etl_pipeline():
         df_features = pd.concat(features_list, axis=0).reset_index(drop=True)
         df_stats = pd.concat(stats_list, axis=0).reset_index(drop=True)
 
-        load_to_database(df_features, 'player_features', 'stats')
-        load_to_database(df_stats, 'player_stats', 'stats')
+        load_to_database(df_features, user='etl', table_name='player_features', schema='stats')
+        load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats')
 
 
     @task(trigger_rule='all_success')

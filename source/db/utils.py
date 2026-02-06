@@ -9,7 +9,7 @@ def remove_season_data(season: int):
         season (int): The season year to be removed from the table.
     """
 
-    engine = get_engine()
+    engine = get_engine(user='etl')
 
     with engine.begin() as conn:
         query = f"""
@@ -35,7 +35,7 @@ def create_serving_view():
     
     sql = sql_path.read_text()
 
-    engine = get_engine()
+    engine = get_engine(user='ml')
 
     with engine.begin() as conn:
         conn.execute(sql)

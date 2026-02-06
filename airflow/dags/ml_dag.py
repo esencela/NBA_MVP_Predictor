@@ -70,16 +70,16 @@ def ml_pipeline():
         """
         
         predictions = pd.read_parquet(file_path)
-        load_to_database(predictions, 'player_predictions', 'predictions')
+        load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
 
     
-    @task
-    def create_view():
-        """
-        Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
-        """
-
-        create_serving_view()
+    #@task
+    #def create_view():
+    #    """
+    #    Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
+    #    """
+    #
+    #    create_serving_view()
 
 
     @task(trigger_rule='all_success')
@@ -104,7 +104,7 @@ def ml_pipeline():
 
     train_task >> predictions
 
-    load(predictions) >> create_view() >> clean_up()
+    load(predictions) >> clean_up()
 
 
 ml_dag = ml_pipeline()

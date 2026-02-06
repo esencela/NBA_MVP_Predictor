@@ -158,8 +158,8 @@ def update_pipeline():
 
         remove_season_data(CURRENT_SEASON)
 
-        load_to_database(df_features, 'player_features', 'stats', append=True)
-        load_to_database(df_stats, 'player_stats', 'stats', append=True)
+        load_to_database(df_features, user='etl', table_name='player_features', schema='stats', append=True)
+        load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats', append=True)
 
 
     @task
@@ -188,16 +188,16 @@ def update_pipeline():
         """
         
         predictions = pd.read_parquet(file_path)
-        load_to_database(predictions, 'player_predictions', 'predictions')
+        load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
 
 
-    @task
-    def create_view():
-        """
-        Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
-        """
-
-        create_serving_view()
+    #@task
+    #def create_view():
+    #    """
+    #    Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
+    #    """
+    #
+    #    create_serving_view()
 
 
     @task(trigger_rule='all_success')
@@ -224,7 +224,7 @@ def update_pipeline():
 
     load_player_data(transform_paths) >> predictions
 
-    load_predictions(predictions) >> create_view() >> clean_up()
+    load_predictions(predictions) >> clean_up()
 
 
 update_dag = update_pipeline()
