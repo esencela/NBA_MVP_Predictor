@@ -5,6 +5,7 @@ CREATE SCHEMA IF NOT EXISTS serving;
 
 CREATE TABLE IF NOT EXISTS stats.player_features (
     "Season" INT NOT NULL,
+    "player_id" VARCHAR(9) NOT NULL,
     "Player" VARCHAR(40) NOT NULL,
     "MP" FLOAT NOT NULL,
     "PTS" FLOAT,
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS stats.player_features (
 
 CREATE TABLE IF NOT EXISTS stats.player_stats (
     "Season" INT NOT NULL,
+    "player_id" VARCHAR(9) NOT NULL,
     "Player" VARCHAR(40) NOT NULL,
     "Team" VARCHAR(4) NOT NULL,
     "MP" FLOAT,
@@ -37,12 +39,14 @@ CREATE TABLE IF NOT EXISTS stats.player_stats (
 
 CREATE TABLE IF NOT EXISTS predictions.mvp_predictions (
     "Season" INT NOT NULL,
+    "player_id" VARCHAR(9) NOT NULL,
     "Player" VARCHAR(40) NOT NULL,
     "Predicted_Share" FLOAT
 );
 
 CREATE OR REPLACE VIEW serving.leaderboard AS (
 SELECT 
+    s."player_id",
     s."Player",
     s."Team", 
     s."MP", 
@@ -54,7 +58,7 @@ SELECT
     p."Predicted_Share"
 FROM predictions.mvp_predictions AS p
 JOIN stats.player_stats AS s
-ON p."Player" = s."Player" 
+ON p."player_id" = s."player_id" 
 AND p."Season" = s."Season"
 WHERE "Predicted_Share" > 0
 ORDER BY "Predicted_Share" DESC);

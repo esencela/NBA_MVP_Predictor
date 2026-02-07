@@ -1,8 +1,8 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # pyright: ignore[reportMissingImports]
 from typing import List
-import requests
-import cloudscraper
+import requests # pyright: ignore[reportMissingModuleSource]
+import cloudscraper # pyright: ignore[reportMissingImports]
 import time
 import logging
 from source.config.settings import (
@@ -67,7 +67,8 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
     # Required data is kept in first table
     df = tables[0]
 
-    # Add player IDs seperately
+    # Add player IDs seperately, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'per_game_stats')
 
     # Last row contains unnecessary data, drop it from table
@@ -94,7 +95,8 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
     # Required data is kept in first table
     df = tables[0]
 
-    # Add player IDs seperately
+    # Add player IDs seperately, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'advanced')
 
     # Last row contains unnecessary data, drop it from table
@@ -154,7 +156,8 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     # Required data is kept in first table
     df = tables[0]
 
-    # Get player IDs seperately
+    # Add player IDs seperately, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'mvp')
 
     df.reset_index(drop=True, inplace=True)

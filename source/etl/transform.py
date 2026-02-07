@@ -38,8 +38,8 @@ def transform_season_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, 
     enriched_data = build_features(transformed_data)
     enriched_data = scale_features(enriched_data)
 
-    stats_order = ['Season', 'Player', 'Team', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
-    feature_order = ['Season', 'Player', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L', 'W/L%', 'Share']
+    stats_order = ['Season', 'player_id', 'Player', 'Team', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
+    feature_order = ['Season', 'player_id', 'Player', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L', 'W/L%', 'Share']
 
     df_stats = transformed_data[stats_order]
     df_features = enriched_data[feature_order]
@@ -82,7 +82,7 @@ def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
 
-    columns_to_keep = ['Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
+    columns_to_keep = ['player_id', 'Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
 
     df = df[columns_to_keep]
 
@@ -104,7 +104,7 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    columns_to_keep = ['Player', 'Team', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
+    columns_to_keep = ['player_id', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
 
     df = df[columns_to_keep]
 
@@ -209,10 +209,10 @@ def clean_mvp_vote_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Rename nested column names
     df = df.set_axis(['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
-                              'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48'], 
+                              'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id'], 
                                axis=1)
     
-    columns_to_keep = ['Player', 'Team', 'Share']
+    columns_to_keep = ['player_id', 'Share']
 
     df = df[columns_to_keep]
 
@@ -234,11 +234,11 @@ def merge_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame, team_da
     
     """
 
-    df = per_game_data.merge(advanced_data, how='inner', on=['Player', 'Team'])
+    df = per_game_data.merge(advanced_data, how='inner', on='player_id')
 
     df = df.merge(team_data, how='left', on='Team')
 
-    df = df.merge(mvp_data, how='left', on=['Player', 'Team'])
+    df = df.merge(mvp_data, how='left', on='player_id')
 
     # Null values are players with zero vote share
     df['Share'] = df['Share'].fillna(0)
@@ -265,15 +265,20 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
     multi_team_mask = df['Team'].str.contains('\\d', regex=True)
 
     # Group by player and calculate weighted win rate - Players with one team will be unaffected
-    weighted_team_stats = (df[~multi_team_mask].groupby('Player')[['Player', 'W/L%', 'G']]
-    .apply(lambda x: (x['W/L%'] * x['G']).sum() / x['G'].sum()).reset_index(name='W/L%_imputed'))
+    #weighted_team_stats = (df[~multi_team_mask].groupby('player_id')[['player_id', 'Player', 'W/L%', 'G']]
+    #.apply(lambda x: (x['W/L%'] * x['G']).sum() / x['G'].sum()).reset_index(name='W/L%_imputed'))
+
+    weighted_team_stats = (df[~multi_team_mask].groupby('player_id')
+                           .apply(lambda x: pd.Series({
+                               'W/L%_imputed': (x['W/L%'] * x['G']).sum() / x['G'].sum()
+                           })))
 
     # Merge imputed win rate back into DataFrame
-    df = df.merge(weighted_team_stats, on='Player', how='left')
+    df = df.merge(weighted_team_stats, on='player_id', how='left')
     df.loc[multi_team_mask, 'W/L%'] = df.loc[multi_team_mask, 'W/L%_imputed']
 
     # Clean DataFrame
-    df.drop_duplicates(subset=['Player'], keep='first', inplace=True) 
+    df.drop_duplicates(subset=['player_id'], keep='first', inplace=True) 
     df.drop(columns='W/L%_imputed', inplace=True)
     df['W/L%'] = df['W/L%'].round(3)
 

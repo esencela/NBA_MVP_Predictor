@@ -7,4 +7,8 @@ from source.config.settings import (
     MIN_SEASON
 )
 
-print(extract_per_game_season_data(CURRENT_SEASON - 1))
+#print(pd.read_parquet(f'airflow/data/features_2003.parquet').isna().sum())
+
+df = pd.read_parquet(f'airflow/data/stats_2004.parquet')
+
+print(df[df['Player'].notna()])

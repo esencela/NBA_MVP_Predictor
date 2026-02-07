@@ -27,7 +27,7 @@ def get_predictions():
     X_current = query_data(query, user='ml')
 
     feature_columns = ['MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'W/L%', 'VORP_W/L']
-    id_columns = ['Season', 'Player']
+    id_columns = ['Season', 'player_id', 'Player']
 
     predictions = X_current[id_columns]
 
