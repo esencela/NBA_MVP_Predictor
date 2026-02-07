@@ -1,10 +1,15 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
+from bs4 import BeautifulSoup
 from typing import List
+import requests
+import cloudscraper
 import time
 import logging
 from source.config.settings import (
     CURRENT_SEASON
 )
+
+SLEEP_TIME = 3.5
 
 def extract_season_data(season: int) -> dict:
     """
@@ -23,19 +28,17 @@ def extract_season_data(season: int) -> dict:
         dict: Dictionary that holds all dataframes (per_game, advanced, team, mvp).
     """
 
-    sleeping_time = 5
-
     per_game = extract_per_game_season_data(season)
-    time.sleep(sleeping_time)
+    time.sleep(SLEEP_TIME)
 
     advanced = extract_advanced_season_data(season)
-    time.sleep(sleeping_time)
+    time.sleep(SLEEP_TIME)
 
     team = extract_team_season_data(season)
-    time.sleep(sleeping_time)
+    time.sleep(SLEEP_TIME)
     
     mvp = extract_mvp_vote_data(season)
-    time.sleep(sleeping_time)
+    time.sleep(SLEEP_TIME)
 
     logging.info(f'Extracted data for {season} season')
 
@@ -64,9 +67,12 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
     # Required data is kept in first table
     df = tables[0]
 
+    # Add player IDs seperately
+    df['player_id'] = retrieve_player_ids(url, 'per_game_stats')
+
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
-    df.reset_index(drop=True, inplace=True)
+    df.reset_index(drop=True, inplace=True)    
 
     return df
 
@@ -87,6 +93,9 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
 
     # Required data is kept in first table
     df = tables[0]
+
+    # Add player IDs seperately
+    df['player_id'] = retrieve_player_ids(url, 'advanced')
 
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
@@ -138,13 +147,15 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     # Return empty dataframe - Current Season will have no mvp voting data
     if (season == CURRENT_SEASON):
         return pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
-                                     'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48'])
+                                     'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id_'])
     
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
-
     df = tables[0]
+
+    # Get player IDs seperately
+    df['player_id'] = retrieve_player_ids(url, 'mvp')
 
     df.reset_index(drop=True, inplace=True)
 
@@ -171,6 +182,34 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
         raise ValueError(f'No tables found in url: {url}')
     
     return tables
+
+def retrieve_player_ids(url: str, table_id: str) -> List[str]:
+    """
+    Retrieve player IDs from a specified URL and table ID using cloudscraper to bypass Cloudflare protections.
+    
+    Params:
+        url (str): The URL of webpage containing the target table.
+        table_id (str): The HTML id attribute of the target table.
+
+    Returns:
+        list[str]: List of player IDs retrieved from the specified table
+    """
+    scraper = cloudscraper.create_scraper()
+    response = scraper.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    table = soup.find('table', id=table_id).find('tbody')
+    player_ids = []
+    print(table.find_all('tr')[0])    
+
+    for row in table.find_all('tr'):
+        cell = row.find("td", {"data-append-csv": True})  
+        if cell:
+            player_id = cell['data-append-csv']
+
+        player_ids.append(player_id)
+
+    return player_ids
 
 
 def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:

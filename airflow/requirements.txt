@@ -6,3 +6,7 @@ psycopg2-binary
 lightgbm
 pyarrow
 python-dotenv
+bs4
+requests
+cloudscraper
+lxml
