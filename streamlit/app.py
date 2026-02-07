@@ -11,5 +11,6 @@ st.title('Leaderboard')
 query = "SELECT * FROM serving.leaderboard"
 
 df = query_data(query, user='app')
+df.drop(columns=['player_id'], inplace=True)
 
 st.dataframe(df)
