@@ -2,7 +2,7 @@ from source.ml.model import LGBMModel
 from source.db.connection import query_data
 from source.config.settings import (
     CURRENT_SEASON,
-    MODEL_PATH
+    MVP_MODEL_PATH
 )
 
 
@@ -20,7 +20,7 @@ def get_predictions():
         pd.DataFrame: DataFrame holding model predictions along with player and season info.
     """
 
-    model = LGBMModel.load(MODEL_PATH)
+    model = LGBMModel.load(MVP_MODEL_PATH)
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" = {CURRENT_SEASON}'
 

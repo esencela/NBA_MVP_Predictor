@@ -3,7 +3,7 @@ from source.ml.preprocessing import add_features
 from source.db.connection import query_data
 from source.config.settings import (
     CURRENT_SEASON,
-    MODEL_PATH
+    MVP_MODEL_PATH
 )
 
 
@@ -24,4 +24,4 @@ def train_model():
 
     model = LGBMModel()
     model.fit(X_train, y_class, y_regr)
-    model.save(MODEL_PATH)
+    model.save(MVP_MODEL_PATH)
