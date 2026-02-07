@@ -188,7 +188,7 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
 
 def retrieve_player_ids(url: str, table_id: str) -> List[str]:
     """
-    Retrieve player IDs from a specified URL and table ID using cloudscraper to bypass Cloudflare protections.
+    Retrieve player IDs from a specified URL and table ID using cloudscraper to bypass Cloudflare bot protections.
     
     Params:
         url (str): The URL of webpage containing the target table.
@@ -202,8 +202,7 @@ def retrieve_player_ids(url: str, table_id: str) -> List[str]:
     soup = BeautifulSoup(response.text, 'html.parser')
 
     table = soup.find('table', id=table_id).find('tbody')
-    player_ids = []
-    print(table.find_all('tr')[0])    
+    player_ids = []   
 
     for row in table.find_all('tr'):
         cell = row.find("td", {"data-append-csv": True})  
