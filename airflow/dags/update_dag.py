@@ -287,9 +287,11 @@ def update_pipeline():
             else:
                 item.unlink()
 
-    start()
+    start_task = start()
 
     extract_paths = extract(CURRENT_SEASON)
+
+    start_task >> extract_paths
 
     transform_paths = transform(extract_paths)
 
