@@ -3,6 +3,7 @@ CREATE SCHEMA IF NOT EXISTS stats;
 CREATE SCHEMA IF NOT EXISTS predictions;
 CREATE SCHEMA IF NOT EXISTS serving;
 
+-- Table holding scaled features for training MVP model and making predictions
 CREATE TABLE IF NOT EXISTS stats.player_features (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS stats.player_features (
     "Share" FLOAT
 );
 
+-- Table holding cleaned stats for player seasons
 CREATE TABLE IF NOT EXISTS stats.player_stats (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS stats.player_stats (
     "BLK" FLOAT
 );
 
+-- Table holding MVP predictions for each player in current season
 CREATE TABLE IF NOT EXISTS predictions.mvp_predictions (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
@@ -44,6 +47,7 @@ CREATE TABLE IF NOT EXISTS predictions.mvp_predictions (
     "Predicted_Share" FLOAT
 );
 
+-- View to show leaderboard of MVP predicted share. Only contains players with predicted share > 0
 CREATE OR REPLACE VIEW serving.leaderboard AS (
 SELECT 
     s."player_id",

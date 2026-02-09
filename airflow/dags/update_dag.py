@@ -1,4 +1,5 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
+from airflow.utils.context import get_current_context
 from datetime import datetime, timedelta
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
