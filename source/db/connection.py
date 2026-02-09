@@ -27,7 +27,12 @@ DB_CONFIG = {
 
 
 def get_engine(user: str): 
-    """Returns a SQLalchemy engine that connects to the PostgreSQL database."""
+    """
+    Returns a SQLalchemy engine that connects to the PostgreSQL database.
+
+    Params:
+        user (str): Database user to connect as. Must be one of 'etl', 'ml', or 'app'.
+    """
 
     if user not in DB_CONFIG:
         raise ValueError(f"Invalid user '{user}'. Valid options are: {list(DB_CONFIG.keys())}")

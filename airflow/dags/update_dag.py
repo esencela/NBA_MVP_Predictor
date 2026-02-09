@@ -1,11 +1,13 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
 from airflow.utils.context import get_current_context
+from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
 from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data, create_serving_view
+from source.db.connection import get_engine
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -22,15 +24,95 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
+
+def update_success(context):
+    
+    update_id = context['ti'].xcom_pull(task_ids='start')
+
+    engine = get_engine(user='ml')
+    with engine.begin() as conn:
+        conn.execute(text("""
+            UPDATE metadata.update_runs
+            SET status = 'success', 
+                end_time = NOW()
+            WHERE update_id = :update_id;
+            """),
+            {
+                'update_id': update_id
+            }
+        )
+
+
+def update_failure(context):
+    
+    update_id = context['ti'].xcom_pull(task_ids='start')
+    error_message = str(context.get('exception'))[:500] # Truncate error message to limit data usage
+
+    engine = get_engine(user='ml')
+    with engine.begin() as conn:
+        conn.execute(text("""
+            UPDATE metadata.update_runs
+            SET status = 'failed', 
+                end_time = NOW(),
+                error_message = :error_message
+            WHERE update_id = :update_id;
+            """),
+            {
+                'update_id': update_id,
+                'error_message': error_message
+            }
+        )
+
+
 @dag(
     dag_id='update_dag',
     default_args=default_args,
     description='Update DAG that updates current season data and predictions',
     schedule_interval='@weekly',
     start_date=datetime(2026, 1, 26),
-    catchup=False
+    catchup=False,
+    on_success_callback=update_success,
+    on_failure_callback=update_failure
 )
 def update_pipeline():
+
+    @task
+    def start():
+        context = get_current_context()
+        dag_run = context['dag_run']
+
+        trigger_type = 'manual' if dag_run.external_trigger else 'scheduled'
+
+        engine = get_engine(user='ml')
+
+        with engine.begin() as conn:
+            result = conn.execute(text("""
+                INSERT INTO metadata.update_runs (
+                    dag_id,
+                    run_id,
+                    start_time,
+                    status,
+                    trigger_type
+                )
+                VALUES (
+                    :dag_id,
+                    :run_id,
+                    NOW(),
+                    'running',
+                    :trigger_type
+                )
+                RETURNING update_id;
+            """), 
+            {
+                'dag_id': context['dag'].dag_id,
+                'run_id': context['run_id'],
+                'trigger_type': trigger_type
+            })
+
+            update_id = result.scalar()
+        
+        return update_id
+
 
     @task(pool='api_pool')
     def extract(season: int) -> dict:
@@ -192,15 +274,6 @@ def update_pipeline():
         load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
 
 
-    #@task
-    #def create_view():
-    #    """
-    #    Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
-    #    """
-    #
-    #    create_serving_view()
-
-
     @task(trigger_rule='all_success')
     def clean_up():
         """
@@ -216,6 +289,7 @@ def update_pipeline():
             else:
                 item.unlink()
 
+    start()
 
     extract_paths = extract(CURRENT_SEASON)
 
