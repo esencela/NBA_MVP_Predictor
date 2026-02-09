@@ -39,6 +39,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ml_user;
 
 ALTER SCHEMA serving OWNER TO ml_user;
 
+-- Metadata Schema
+GRANT USAGE, CREATE ON SCHEMA metadata TO ml_user;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA metadata TO ml_user;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA metadata
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ml_user;
+
+ALTER SCHEMA metadata OWNER TO ml_user;
+
 -- Set privileges to app in database
 -- Serving Schema
 GRANT USAGE ON SCHEMA serving TO app_user;
@@ -46,4 +55,12 @@ GRANT SELECT ON ALL TABLES IN SCHEMA serving TO app_user;
 
 -- ml_user creates tables in serving schema, so we need to grant select privileges to app_user for those tables
 ALTER DEFAULT PRIVILEGES FOR ROLE ml_user IN SCHEMA serving
+GRANT SELECT ON TABLES TO app_user;
+
+-- Metadata Schema
+GRANT USAGE ON SCHEMA metadata TO app_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA metadata TO app_user;
+
+-- ml_user creates tables in metadata schema, so we need to grant select privileges to app_user for those tables
+ALTER DEFAULT PRIVILEGES FOR ROLE ml_user IN SCHEMA metadata
 GRANT SELECT ON TABLES TO app_user;

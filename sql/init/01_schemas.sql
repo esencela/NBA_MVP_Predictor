@@ -2,12 +2,13 @@
 CREATE SCHEMA IF NOT EXISTS stats;
 CREATE SCHEMA IF NOT EXISTS predictions;
 CREATE SCHEMA IF NOT EXISTS serving;
+CREATE SCHEMA IF NOT EXISTS metadata;
 
 -- Table holding scaled features for training MVP model and making predictions
 CREATE TABLE IF NOT EXISTS stats.player_features (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
-    "Player" VARCHAR(40) NOT NULL,
+    "Player" TEXT NOT NULL,
     "MP" FLOAT NOT NULL,
     "PTS" FLOAT,
     "AST" FLOAT,
@@ -29,8 +30,8 @@ CREATE TABLE IF NOT EXISTS stats.player_features (
 CREATE TABLE IF NOT EXISTS stats.player_stats (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
-    "Player" VARCHAR(40) NOT NULL,
-    "Team" VARCHAR(4) NOT NULL,
+    "Player" TEXT NOT NULL,
+    "Team" VARCHAR(3) NOT NULL,
     "MP" FLOAT,
     "PTS" FLOAT,
     "AST" FLOAT,
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS stats.player_stats (
 CREATE TABLE IF NOT EXISTS predictions.mvp_predictions (
     "Season" INT NOT NULL,
     "player_id" VARCHAR(9) NOT NULL,
-    "Player" VARCHAR(40) NOT NULL,
+    "Player" TEXT NOT NULL,
     "Predicted_Share" FLOAT
 );
 
@@ -66,3 +67,15 @@ ON p."player_id" = s."player_id"
 AND p."Season" = s."Season"
 WHERE "Predicted_Share" > 0
 ORDER BY "Predicted_Share" DESC);
+
+-- Table tracking updates to mvp predictions
+CREATE TABLE IF NOT EXISTS metadata.update_runs (
+    update_id SERIAL PRIMARY KEY,
+    dag_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    status TEXT NOT NULL,
+    trigger_type TEXT NOT NULL,
+    error_message TEXT
+);
