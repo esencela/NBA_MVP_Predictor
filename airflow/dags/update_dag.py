@@ -1,5 +1,4 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
-from airflow.utils.context import get_current_context
 from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.etl.extract import extract_season_data
@@ -25,9 +24,9 @@ default_args = {
 }
 
 
-def update_success(context):
+def update_success(**kwargs):
     
-    update_id = context['ti'].xcom_pull(task_ids='start')
+    update_id = kwargs['ti'].xcom_pull(task_ids='start')
 
     engine = get_engine(user='ml')
     with engine.begin() as conn:
@@ -43,10 +42,10 @@ def update_success(context):
         )
 
 
-def update_failure(context):
+def update_failure(**kwargs):
     
-    update_id = context['ti'].xcom_pull(task_ids='start')
-    error_message = str(context.get('exception'))[:500] # Truncate error message to limit data usage
+    update_id = kwargs['ti'].xcom_pull(task_ids='start')
+    error_message = str(kwargs.get('exception'))[:500] # Truncate error message to limit data usage
 
     engine = get_engine(user='ml')
     with engine.begin() as conn:
@@ -77,9 +76,8 @@ def update_failure(context):
 def update_pipeline():
 
     @task
-    def start():
-        context = get_current_context()
-        dag_run = context['dag_run']
+    def start(**kwargs):
+        dag_run = kwargs['dag_run']
 
         trigger_type = 'manual' if dag_run.external_trigger else 'scheduled'
 
@@ -104,8 +102,8 @@ def update_pipeline():
                 RETURNING update_id;
             """), 
             {
-                'dag_id': context['dag'].dag_id,
-                'run_id': context['run_id'],
+                'dag_id': kwargs['dag'].dag_id,
+                'run_id': kwargs['run_id'],
                 'trigger_type': trigger_type
             })
 
