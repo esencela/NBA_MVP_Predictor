@@ -5,7 +5,7 @@ from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
 from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
-from source.db.utils import remove_season_data, create_serving_view
+from source.db.utils import remove_season_data
 from source.db.connection import get_engine
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path

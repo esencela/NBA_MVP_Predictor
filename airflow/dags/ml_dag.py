@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from source.ml.train import train_model
 from source.ml.predict import get_predictions
 from source.etl.load import load_to_database
-from source.db.utils import create_serving_view
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
