@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from source.ml.train import train_model
 from source.ml.predict import get_predictions
 from source.etl.load import load_to_database
+from source.airflow.utils import start_update_run, log_update_success, log_update_failure
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -20,7 +21,9 @@ default_args = {
     description='ML DAG that trains model and loads predictions to database',
     schedule_interval=None,
     start_date=datetime(2026, 1, 18),
-    catchup=False
+    catchup=False,
+    on_success_callback=log_update_success,
+    on_failure_callback=log_update_failure
 )
 def ml_pipeline():
     """
@@ -60,6 +63,10 @@ def ml_pipeline():
 
 
     @task
+    def start_log(**kwargs):
+        return start_update_run(**kwargs)
+
+    @task
     def load(file_path: str):
         """
         Loads the player MVP predictions into the PostgreSQL database.
@@ -70,15 +77,6 @@ def ml_pipeline():
         
         predictions = pd.read_parquet(file_path)
         load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
-
-    
-    #@task
-    #def create_view():
-    #    """
-    #    Creates a view in PostgreSQL database to query player stats for players with predicted vote share > 0.
-    #    """
-    #
-    #    create_serving_view()
 
 
     @task(trigger_rule='all_success')
@@ -103,7 +101,7 @@ def ml_pipeline():
 
     train_task >> predictions
 
-    load(predictions) >> clean_up()
+    start_log() >> load(predictions) >> clean_up()
 
 
 ml_dag = ml_pipeline()

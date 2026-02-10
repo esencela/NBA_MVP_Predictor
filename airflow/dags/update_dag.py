@@ -7,7 +7,7 @@ from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
 from source.db.connection import get_engine
-from source.airflow.utils import log_update_success, log_update_failure
+from source.airflow.utils import start_update_run, log_update_success, log_update_failure
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -85,44 +85,9 @@ def update_failure(context):
 def update_pipeline():
 
     @task
-    def start(**kwargs):
-        """
-        Initial task to log the start of the update process in the database and return the update_id for tracking.
-        """
-        dag_run = kwargs['dag_run']
-
-        trigger_type = 'manual' if dag_run.external_trigger else 'scheduled'
-
-        engine = get_engine(user='ml')
-
-        with engine.begin() as conn:
-            result = conn.execute(text("""
-                INSERT INTO metadata.update_runs (
-                    dag_id,
-                    run_id,
-                    start_time,
-                    status,
-                    trigger_type
-                )
-                VALUES (
-                    :dag_id,
-                    :run_id,
-                    NOW(),
-                    'running',
-                    :trigger_type
-                )
-                RETURNING update_id;
-            """), 
-            {
-                'dag_id': kwargs['dag'].dag_id,
-                'run_id': kwargs['run_id'],
-                'trigger_type': trigger_type
-            })
-
-            update_id = result.scalar()
-        
-        return update_id
-
+    def start_log(**kwargs):
+        return start_update_run(**kwargs)
+    
 
     @task(pool='api_pool')
     def extract(season: int) -> dict:
@@ -299,7 +264,7 @@ def update_pipeline():
             else:
                 item.unlink()
 
-    start_task = start()
+    start_task = start_log()
 
     extract_paths = extract(CURRENT_SEASON)
 
