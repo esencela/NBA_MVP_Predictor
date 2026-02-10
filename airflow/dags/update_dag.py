@@ -7,6 +7,7 @@ from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
 from source.db.connection import get_engine
+from source.airflow.utils import log_update_success, log_update_failure
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -78,8 +79,8 @@ def update_failure(context):
     schedule_interval='@weekly',
     start_date=datetime(2026, 1, 26),
     catchup=False,
-    on_success_callback=update_success,
-    on_failure_callback=update_failure
+    on_success_callback=log_update_success,
+    on_failure_callback=log_update_failure
 )
 def update_pipeline():
 

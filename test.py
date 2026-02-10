@@ -9,6 +9,8 @@ from source.config.settings import (
 
 #print(pd.read_parquet(f'airflow/data/features_2003.parquet').isna().sum())
 
-df = pd.read_parquet(f'airflow/data/stats_2004.parquet')
+#df = pd.read_parquet(f'airflow/data/stats_2004.parquet')
 
-print(df[df['Player'].notna()])
+#print(df[df['Player'].notna()])
+
+print(extract_team_season_data(CURRENT_SEASON))
