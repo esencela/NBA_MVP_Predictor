@@ -2,6 +2,7 @@ from source.etl.extract import extract_team_season_data, extract_mvp_vote_data, 
 #from source.etl.transform import transform_season_data
 #from source.etl.load import load_to_database
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
+from pathlib import Path
 from source.config.settings import (
     CURRENT_SEASON,
     MIN_SEASON
@@ -13,4 +14,4 @@ from source.config.settings import (
 
 #print(df[df['Player'].notna()])
 
-print(pd.read_html('html_snapshots/awards_2025.html')[0])
+print(pd.read_html(Path('html_snapshots/NBA_2003_per_game.html'))[0])

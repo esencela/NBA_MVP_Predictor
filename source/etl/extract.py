@@ -1,16 +1,17 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from bs4 import BeautifulSoup # pyright: ignore[reportMissingImports]
 from typing import List
+from pathlib import Path
+import html5lib # pyright: ignore[reportMissingModuleSource]
 import requests # pyright: ignore[reportMissingModuleSource]
 import cloudscraper # pyright: ignore[reportMissingImports]
 import time
 import logging
 from source.config.settings import (
     CURRENT_SEASON,
-    LOCAL_EXTRACT
+    LOCAL_EXTRACT,
+    SLEEP_TIME
 )
-
-SLEEP_TIME = 3.5
 
 def extract_season_data(season: int) -> dict:
     """
@@ -62,8 +63,9 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw per-game player statistics for the given season.
     """
 
+    # For local extraction use file path
     if LOCAL_EXTRACT:
-        url = f'opt/airflow/html_snapshots/NBA_{season}_per_game.html'
+        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_per_game.html')
     else:
         url = f'https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html'
 
@@ -94,8 +96,9 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw advanced player statistics for the given season.
     """
 
+    # For local extraction use file path
     if LOCAL_EXTRACT:
-        url = f'opt/airflow/html_snapshots/NBA_{season}_advanced.html'
+        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_advanced.html')
     else:
         url = f'https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html'
 
@@ -126,8 +129,9 @@ def extract_team_season_data(season: int) -> dict:
         dict: Raw team statistics for the given season (east, west).
     """
 
+    # For local extraction use file path
     if LOCAL_EXTRACT:
-        url = f'opt/airflow/html_snapshots/NBA_{season}_standings.html'
+        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_standings.html')
     else:
         url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
 
@@ -157,8 +161,9 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw MVP voting data for the given season.
     """
 
+    # For local extraction use file path
     if LOCAL_EXTRACT:
-        url = f'opt/airflow/html_snapshots/awards_{season}.html'
+        url = Path(f'/opt/airflow/html_snapshots/awards_{season}.html')
     else:    
         url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
 
@@ -202,24 +207,32 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
     
     return tables
 
+
 def retrieve_player_ids(url: str, table_id: str) -> List[str]:
     """
     Retrieve player IDs from a specified URL and table ID using cloudscraper to bypass Cloudflare bot protections.
     
     Params:
-        url (str): The URL of webpage containing the target table.
+        url (str): The URL of HTML file containing the target table.
         table_id (str): The HTML id attribute of the target table.
 
     Returns:
         list[str]: List of player IDs retrieved from the specified table
     """
-    scraper = cloudscraper.create_scraper()
-    response = scraper.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    if LOCAL_EXTRACT:
+        # For local extraction, read HTML content directly from file system
+        content = url.read_text()
+        soup = BeautifulSoup(content, 'html.parser')
+    else:
+        # For non-local extraction, use cloudscraper to bypass Cloudflare protections # WILL GET IP BANNED
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
     table = soup.find('table', id=table_id).find('tbody')
     player_ids = []   
 
+    # Player IDs are stored in the 'data-append-csv' attribute of the first 'td' element in each row of the table
     for row in table.find_all('tr'):
         cell = row.find("td", {"data-append-csv": True})  
         if cell:
