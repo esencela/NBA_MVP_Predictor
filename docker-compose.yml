@@ -81,6 +81,7 @@ x-airflow-common:
     - ${PWD}/airflow/models:/opt/airflow/models
     - ${PWD}/airflow/data:/opt/airflow/data
     - ${PWD}/sql:/opt/airflow/sql
+    - ${PWD}/html_snapshots:/opt/airflow/html_snapshots
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on

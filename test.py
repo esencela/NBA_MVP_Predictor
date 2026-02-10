@@ -13,4 +13,4 @@ from source.config.settings import (
 
 #print(df[df['Player'].notna()])
 
-print(extract_team_season_data(CURRENT_SEASON))
+print(pd.read_html('html_snapshots/awards_2025.html')[0])

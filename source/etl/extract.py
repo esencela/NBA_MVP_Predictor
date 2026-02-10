@@ -6,7 +6,8 @@ import cloudscraper # pyright: ignore[reportMissingImports]
 import time
 import logging
 from source.config.settings import (
-    CURRENT_SEASON
+    CURRENT_SEASON,
+    LOCAL_EXTRACT
 )
 
 SLEEP_TIME = 3.5
@@ -61,7 +62,11 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw per-game player statistics for the given season.
     """
 
-    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html'
+    if LOCAL_EXTRACT:
+        url = f'opt/airflow/html_snapshots/NBA_{season}_per_game.html'
+    else:
+        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html'
+
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
@@ -89,7 +94,11 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw advanced player statistics for the given season.
     """
 
-    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html'
+    if LOCAL_EXTRACT:
+        url = f'opt/airflow/html_snapshots/NBA_{season}_advanced.html'
+    else:
+        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html'
+
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
@@ -117,7 +126,11 @@ def extract_team_season_data(season: int) -> dict:
         dict: Raw team statistics for the given season (east, west).
     """
 
-    url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
+    if LOCAL_EXTRACT:
+        url = f'opt/airflow/html_snapshots/NBA_{season}_standings.html'
+    else:
+        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
+
     tables = retrieve_tables_from_url(url)
 
     # Required data is split between first two tables
@@ -144,7 +157,10 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw MVP voting data for the given season.
     """
 
-    url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
+    if LOCAL_EXTRACT:
+        url = f'opt/airflow/html_snapshots/awards_{season}.html'
+    else:    
+        url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
 
     # Return empty dataframe - Current Season will have no mvp voting data
     if (season == CURRENT_SEASON):
