@@ -6,6 +6,7 @@ import html5lib # pyright: ignore[reportMissingModuleSource]
 import requests # pyright: ignore[reportMissingModuleSource]
 import cloudscraper # pyright: ignore[reportMissingImports]
 import time
+from datetime import datetime
 import logging
 from source.config.settings import (
     CURRENT_SEASON,
@@ -77,6 +78,8 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
     # Add player IDs seperately, sleeping to avoid request limits
     time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'per_game_stats')
+
+    retrieve_last_update_time(url)
 
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
@@ -224,7 +227,8 @@ def retrieve_player_ids(url: str, table_id: str) -> List[str]:
         content = url.read_text()
         soup = BeautifulSoup(content, 'html.parser')
     else:
-        # For non-local extraction, use cloudscraper to bypass Cloudflare protections # WILL GET IP BANNED
+        # For non-local extraction, use cloudscraper to bypass Cloudflare protections
+        # WILL GET IP BANNED
         scraper = cloudscraper.create_scraper()
         response = scraper.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -241,6 +245,43 @@ def retrieve_player_ids(url: str, table_id: str) -> List[str]:
         player_ids.append(player_id)
 
     return player_ids
+
+
+def retrieve_last_update_time(url: str):
+
+    if LOCAL_EXTRACT:
+        # For local extraction, read HTML content directly from file system
+        content = url.read_text(encoding='utf-8')
+        soup = BeautifulSoup(content, 'html.parser')
+    else:
+        # For non-local extraction, use cloudscraper to bypass Cloudflare protections 
+        # WILL GET IP BANNED
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Last update time is stored in a strong tag with the text 'Site Last Updated:'
+    tag = soup.find('strong', string='Site Last Updated:')
+
+    if tag and tag.parent:
+        update_string = tag.parent.text.replace('Site Last Updated: ', '')
+    else:
+        raise ValueError(f'Could not find last update time in url: {url}')
+    
+    # Clean string of double and trailing spaces
+    cleaned_string = update_string.strip().replace('  ', ' ')
+    
+    # Convert string to datetime object
+    dt = datetime.strptime(cleaned_string, '%A, %B %d,  %I:%M%p')
+
+    # Replace default year with current year
+    dt = dt.replace(year=datetime.now().year)
+
+    # If time is in future, assume previous year
+    if dt > datetime.now():
+        dt = dt.replace(year=datetime.now().year - 1)
+    
+    return dt
 
 
 def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
