@@ -31,7 +31,7 @@ def etl_pipeline():
     """
     ETL Pipeline DAG for NBA MVP Predictor project.
 
-    This DAG extracts season data through web scraping, stages raw datasets as parquet files,
+    This DAG extracts season data through html parsing, stages raw datasets as parquet files,
     transforms the data to create a features dataset for model training and a stats dataset for serving,
     and loads the final datasets into a PostgreSQL database.
 
@@ -270,7 +270,7 @@ def etl_pipeline():
                 item.unlink()
 
 
-    seasons = list(range(MIN_SEASON, CURRENT_SEASON + 1))
+    seasons = list(range(MIN_SEASON, CURRENT_SEASON))
 
     extract_paths = extract.expand(season=seasons)
 

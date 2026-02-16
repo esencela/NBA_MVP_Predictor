@@ -16,14 +16,13 @@ df_mvp.drop(columns=['player_id'], inplace=True)
 st.dataframe(df_mvp, use_container_width=True, hide_index=True)
 
 update_query = """
-    SELECT end_time
-    FROM metadata.update_runs
-    WHERE status='success'
-    ORDER BY end_time DESC
+    SELECT data_freshness
+    FROM metadata.data_freshness
+    ORDER BY time_updated DESC
     LIMIT 1
 """
 
 df_update = query_data(update_query, user='app')
-last_update = pd.to_datetime(df_update['end_time'][0]).date()
+data_freshness = pd.to_datetime(df_update['data_freshness'][0]).date()
 
-st.caption(f"Last updated: {last_update}")
+st.caption(f"Stats last updated: {data_freshness}")

@@ -7,7 +7,7 @@ from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
 from source.db.connection import get_engine
-from source.airflow.utils import start_update_run, log_update_success, log_update_failure
+from source.airflow.utils import start_update_run, log_update_success, log_update_failure, log_data_freshness
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -125,6 +125,8 @@ def update_pipeline():
         df_west = data['team']['west']
         df_mvp = data['mvp']
 
+        data_freshness = data['last_update']
+
         per_game_path = f'/opt/airflow/data/per_game_{season}.parquet'
         advanced_path = f'/opt/airflow/data/advanced_{season}.parquet'
         east_path = f'/opt/airflow/data/east_{season}.parquet'
@@ -149,7 +151,8 @@ def update_pipeline():
                 'west': west_path
             },
             'mvp': mvp_path,
-            'season': season
+            'season': season,
+            'data_freshness': data_freshness.isoformat() # Convert to ISO format string for JSON serialization
         }
     
 
@@ -250,6 +253,11 @@ def update_pipeline():
 
 
     @task(trigger_rule='all_success')
+    def log_freshness(extract_output, **kwargs):
+        log_data_freshness(extract_output['data_freshness'], **kwargs)
+
+
+    @task(trigger_rule='all_success')
     def clean_up():
         """
         Remove intermediate parquet files in the data directory after process completion.
@@ -264,6 +272,7 @@ def update_pipeline():
             else:
                 item.unlink()
 
+
     start_task = start_log()
 
     extract_paths = extract(CURRENT_SEASON)
@@ -276,7 +285,7 @@ def update_pipeline():
 
     load_player_data(transform_paths) >> predictions
 
-    load_predictions(predictions) >> clean_up()
+    load_predictions(predictions) >> log_freshness(extract_paths) >> clean_up()
 
 
 update_dag = update_pipeline()

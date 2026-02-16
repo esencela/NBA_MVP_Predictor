@@ -1,4 +1,4 @@
-from source.etl.extract import extract_team_season_data, extract_mvp_vote_data, extract_per_game_season_data, retrieve_last_update_time
+from source.etl.extract import extract_season_data, extract_mvp_vote_data, extract_per_game_season_data, retrieve_last_update_time
 #from source.etl.transform import transform_season_data
 #from source.etl.load import load_to_database
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
@@ -14,4 +14,4 @@ from source.config.settings import (
 
 #print(df[df['Player'].notna()])
 
-print(retrieve_last_update_time(Path('html_snapshots/NBA_2026_per_game.html')))
+extract_season_data(CURRENT_SEASON)

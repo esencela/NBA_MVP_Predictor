@@ -28,7 +28,17 @@ def extract_season_data(season: int) -> dict:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        dict: Dictionary that holds all dataframes (per_game, advanced, team, mvp).
+        dict: Dictionary that holds all datasets and last update time for source data:
+            {
+                'per_game': pd.DataFrame,
+                'advanced': pd.DataFrame,
+                'team': {
+                    'east': pd.DataFrame,
+                    'west': pd.DataFrame
+                },
+                'mvp': pd.DataFrame,
+                'last_update': datetime
+            }
     """
 
     per_game = extract_per_game_season_data(season)
@@ -45,15 +55,38 @@ def extract_season_data(season: int) -> dict:
 
     logging.info(f'Extracted data for {season} season')
 
+    dict_freshness = {
+        'per_game': per_game['last_update'],
+        'advanced': advanced['last_update'],
+        'team': team['last_update'],
+        'mvp': mvp['last_update']       
+    }
+
+    if season == CURRENT_SEASON:
+        # Current season will have no mvp voting data, so only check freshness of other datasets
+        keys = ['per_game', 'advanced', 'team']
+    else:
+        keys = ['per_game', 'advanced', 'team', 'mvp']
+
+    # Raise ValueError if any datasets have different update times, indicative of failed extraction or stale data
+    update_times = set(dict_freshness[k] for k in keys)
+
+    if len(update_times) > 1:
+        raise ValueError(f'Datasets have different update times: {dict_freshness}')
+
     return {
-        'per_game': per_game,
-        'advanced': advanced,
-        'team': team,
-        'mvp': mvp
+        'per_game': per_game['data'],
+        'advanced': advanced['data'],
+        'team': {
+            'east': team['east'],
+            'west': team['west']
+        },
+        'mvp': mvp['data'],
+        'last_update': dict_freshness['per_game']
     }
 
 
-def extract_per_game_season_data(season: int) -> pd.DataFrame:
+def extract_per_game_season_data(season: int) -> dict:
     """
     Extract NBA per-game player statistics for a given season from Basketball Reference.
 
@@ -61,7 +94,11 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        pd.DataFrame: Raw per-game player statistics for the given season.
+        dict: Dictionary containing raw per-game player statistics and last update time for the given season.
+            {
+                'data': pd.DataFrame,
+                'last_update': datetime
+            }
     """
 
     # For local extraction use file path
@@ -79,16 +116,21 @@ def extract_per_game_season_data(season: int) -> pd.DataFrame:
     time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'per_game_stats')
 
-    retrieve_last_update_time(url)
+    # Retrieve last update time for season data, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
+    last_update = retrieve_last_update_time(url)
 
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
     df.reset_index(drop=True, inplace=True)    
 
-    return df
+    return {
+        'data': df,
+        'last_update': last_update
+    }
 
 
-def extract_advanced_season_data(season: int) -> pd.DataFrame:
+def extract_advanced_season_data(season: int) -> dict:
     """
     Extract NBA advanced player statistics for a given season from Basketball Reference.
 
@@ -96,7 +138,11 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        pd.DataFrame: Raw advanced player statistics for the given season.
+        dict: Dictionary containing raw advanced player statistics and last update time for the given season.
+            {
+                'data': pd.DataFrame,
+                'last_update': datetime
+            }
     """
 
     # For local extraction use file path
@@ -114,11 +160,18 @@ def extract_advanced_season_data(season: int) -> pd.DataFrame:
     time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'advanced')
 
+    # Retrieve last update time for season data, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
+    last_update = retrieve_last_update_time(url)
+
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
     df.reset_index(drop=True, inplace=True)
     
-    return df
+    return {
+        'data': df,
+        'last_update': last_update
+    }
 
 
 def extract_team_season_data(season: int) -> dict:
@@ -129,7 +182,12 @@ def extract_team_season_data(season: int) -> dict:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
 
     Returns:
-        dict: Raw team statistics for the given season (east, west).
+        dict: Dictionary containing raw team statistics and last update time for the given season (east, west).
+            {
+                'east': pd.DataFrame,
+                'west': pd.DataFrame,
+                'last_update': datetime
+            }
     """
 
     # For local extraction use file path
@@ -147,9 +205,14 @@ def extract_team_season_data(season: int) -> dict:
     df_east.reset_index(drop=True, inplace=True)
     df_west.reset_index(drop=True, inplace=True)
 
+    # Retrieve last update time for season data, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
+    last_update = retrieve_last_update_time(url)
+
     return {
         'east': df_east,
-        'west': df_west
+        'west': df_west,
+        'last_update': last_update
     }
 
 
@@ -172,8 +235,11 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
 
     # Return empty dataframe - Current Season will have no mvp voting data
     if (season == CURRENT_SEASON):
-        return pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
-                                     'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id_'])
+        return { 
+            'data': pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
+                                     'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id_']),
+            'last_update': datetime.now() 
+        }
     
     tables = retrieve_tables_from_url(url)
 
@@ -184,9 +250,16 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'mvp')
 
+    # Retrieve last update time for season data, sleeping to avoid request limits
+    time.sleep(SLEEP_TIME)
+    last_update = retrieve_last_update_time(url)
+
     df.reset_index(drop=True, inplace=True)
 
-    return flatten_columns(df)
+    return {
+        'data': flatten_columns(df),
+        'last_update': last_update
+    }
 
 
 def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:

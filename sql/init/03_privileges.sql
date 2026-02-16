@@ -12,6 +12,16 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA stats
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO etl_user;
 ALTER SCHEMA stats OWNER TO etl_user;
 
+-- Metadata Schema
+GRANT USAGE, CREATE ON SCHEMA metadata TO etl_user;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON metadata.data_freshness TO etl_user;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA metadata TO etl_user;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA metadata
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO etl_user;
+
+ALTER TABLE metadata.data_freshness OWNER TO etl_user;
+
 -- Set privileges to ml in database
 -- Stats Schema
 GRANT USAGE ON SCHEMA stats TO ml_user;
@@ -41,13 +51,13 @@ ALTER SCHEMA serving OWNER TO ml_user;
 
 -- Metadata Schema
 GRANT USAGE, CREATE ON SCHEMA metadata TO ml_user;
-GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA metadata TO ml_user;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON metadata.update_runs TO ml_user;
 GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA metadata TO ml_user;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA metadata
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ml_user;
 
-ALTER SCHEMA metadata OWNER TO ml_user;
+ALTER TABLE metadata.update_runs OWNER TO ml_user;
 
 -- Set privileges to app in database
 -- Serving Schema
