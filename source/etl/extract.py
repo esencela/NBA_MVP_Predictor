@@ -248,6 +248,12 @@ def retrieve_player_ids(url: str, table_id: str) -> List[str]:
 
 
 def retrieve_last_update_time(url: str):
+    """
+    Retrieve last update time from basketball reference page.
+    
+    Params:
+        url (str): The URL of HTML file containing the last update time.
+    """
 
     if LOCAL_EXTRACT:
         # For local extraction, read HTML content directly from file system
