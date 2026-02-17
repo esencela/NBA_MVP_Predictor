@@ -20,9 +20,9 @@ default_args = {
 }
 
 @dag(
-    dag_id='etl_dag',
+    dag_id='historic_etl_dag',
     default_args=default_args,
-    description='ETL Dag for NBA MVP Project',
+    description='ETL Dag for NBA MVP Project that extracts, transforms, and loads historical season data',
     schedule_interval=None,
     start_date=datetime(2026, 1, 18),
     catchup=False
