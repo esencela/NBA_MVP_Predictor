@@ -1,11 +1,6 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.ml.train import train_model
-from source.ml.predict import get_predictions
-from source.etl.load import load_to_database
-import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from pathlib import Path
-import shutil
 
 default_args = {
     'owner': 'airflow',

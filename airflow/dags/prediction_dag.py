@@ -1,17 +1,14 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
-from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
 from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
-from source.db.connection import get_engine
 from source.airflow.utils import log_data_freshness
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
-import time
 from source.config.settings import (
     CURRENT_SEASON
 )
@@ -26,14 +23,29 @@ default_args = {
 
 
 @dag(
-    dag_id='update_dag',
+    dag_id='mvp_prediction_dag',
     default_args=default_args,
-    description='Update DAG that updates current season data and predictions',
+    description='Update DAG that performs etl on current season data and generates mvp predictions',
     schedule_interval='@weekly',
     start_date=datetime(2026, 1, 26),
     catchup=False
 )
 def update_pipeline():
+    """
+    Update Pipeline DAG for NBA MVP Predictor project.
+
+    This DAG performs an update process that performs ETL on current season data, generates MVP predictions,
+    and loads the predictions into a PostgreSQL database on a weekly basis.
+
+    Steps:
+    1. Extract current season data and save as parquet files for transformation.
+    2. Transform the raw data into a features dataset for model training and a stats dataset for serving.
+    3. Load the current season data into the PostgreSQL database.
+    4. Generate player MVP predictions based on the current season data and save them as a parquet file.
+    5. Load the player MVP predictions into the PostgreSQL database.
+    6. Log the data freshness of the extracted data.
+    7. Clean up intermediate parquet files.
+    """
 
     @task(pool='api_pool')
     def extract(season: int) -> dict:
