@@ -7,7 +7,7 @@ from source.etl.load import load_to_database
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
 from source.db.connection import get_engine
-from source.airflow.utils import start_update_run, log_update_success, log_update_failure, log_data_freshness
+from source.airflow.utils import log_data_freshness
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
@@ -25,69 +25,15 @@ default_args = {
 }
 
 
-def update_success(context):
-    """
-    Callback function to be executed upon successful completion of DAG run.
-    Updates the status of the current update run in the database to 'success' and records the end time.
-    """
-    
-    update_id = context['ti'].xcom_pull(task_ids='start', key='return_value')
-
-    engine = get_engine(user='ml')
-    with engine.begin() as conn:
-        conn.execute(text("""
-            UPDATE metadata.update_runs
-            SET status = 'success', 
-                end_time = NOW()
-            WHERE update_id = :update_id;
-            """),
-            {
-                'update_id': update_id
-            }
-        )
-
-
-def update_failure(context):
-    """
-    Callback function to be executed upon failure of DAG run.
-    Updates the status of the current update run in the database to 'failed' and records the error message.
-    """
-
-    update_id = context['ti'].xcom_pull(task_ids='start', key='return_value')
-    error_message = str(context.get('exception'))[:500] # Truncate error message to limit data usage
-
-    engine = get_engine(user='ml')
-    with engine.begin() as conn:
-        conn.execute(text("""
-            UPDATE metadata.update_runs
-            SET status = 'failed', 
-                end_time = NOW(),
-                error_message = :error_message
-            WHERE update_id = :update_id;
-            """),
-            {
-                'update_id': update_id,
-                'error_message': error_message
-            }
-        )
-
-
 @dag(
     dag_id='update_dag',
     default_args=default_args,
     description='Update DAG that updates current season data and predictions',
     schedule_interval='@weekly',
     start_date=datetime(2026, 1, 26),
-    catchup=False,
-    on_success_callback=log_update_success,
-    on_failure_callback=log_update_failure
+    catchup=False
 )
 def update_pipeline():
-
-    @task
-    def start_log(**kwargs):
-        return start_update_run(**kwargs)
-    
 
     @task(pool='api_pool')
     def extract(season: int) -> dict:
@@ -273,11 +219,7 @@ def update_pipeline():
                 item.unlink()
 
 
-    start_task = start_log()
-
     extract_paths = extract(CURRENT_SEASON)
-
-    start_task >> extract_paths
 
     transform_paths = transform(extract_paths)
 
