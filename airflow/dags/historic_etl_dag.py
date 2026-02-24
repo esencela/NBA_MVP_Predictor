@@ -7,6 +7,7 @@ import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
 import time
+import logging
 from source.config.settings import (
     CURRENT_SEASON,
     MIN_SEASON
@@ -47,6 +48,8 @@ def etl_pipeline():
     and ensures idempotency by replacing existing data in the PostgreSQL database.
     """
 
+    logger = logging.getLogger(__name__)
+
     @task(pool='api_pool')
     def extract(season: int) -> dict:
         """
@@ -75,6 +78,10 @@ def etl_pipeline():
                 }
         """
 
+        start_time = time.time()
+
+        logger.info('Starting extraction for %s season', season)
+
         data = extract_season_data(season)
 
         df_per_game = data['per_game']
@@ -82,6 +89,19 @@ def etl_pipeline():
         df_east = data['team']['east']
         df_west = data['team']['west']
         df_mvp = data['mvp']
+
+        logger.info('Rows extracted - per_game: %s, advanced: %s, east: %s, west: %s, mvp: %s',
+                    len(df_per_game), 
+                    len(df_advanced), 
+                    len(df_east), 
+                    len(df_west), 
+                    len(df_mvp))
+        
+        # Empty MVP vote data is expected for current season
+        if df_mvp.empty:
+            logger.warning('No MVP voting data found for %s season', season)
+
+        logger.info('Saving extracted data to parquet files')
 
         per_game_path = f'/opt/airflow/data/per_game_{season}.parquet'
         advanced_path = f'/opt/airflow/data/advanced_{season}.parquet'
@@ -98,6 +118,12 @@ def etl_pipeline():
         df_east.to_parquet(east_path, index=False)
         df_west.to_parquet(west_path, index=False)
         df_mvp.to_parquet(mvp_path, index=False)
+
+        logger.info('Parquet files saved for %s season', season)
+
+        logger.info('Completed extraction for %s season in %.2f seconds', 
+                    season, 
+                    time.time() - start_time)
 
         return {
             'per_game': per_game_path,
@@ -129,6 +155,10 @@ def etl_pipeline():
             FileNotFoundError: If any of the expected files are not found within the timeout period.
         """
 
+        start_time = time.time()
+
+        logger.info('Waiting for extracted files for %s season', paths['season'])
+
         timeout = 60
         interval = 5        
 
@@ -144,9 +174,14 @@ def etl_pipeline():
 
             while not p.exists():
                 if time_waited >= timeout:
+                    logger.error('File not found at %s', file_path)
                     raise FileNotFoundError(f'No file found at {file_path}')
                 time.sleep(interval)
                 time_waited += interval
+
+        logger.info('All extracted files found for %s season after waiting %.2f seconds', 
+                    paths['season'], 
+                    time.time() - start_time)
         
         return paths
 
@@ -170,6 +205,10 @@ def etl_pipeline():
                 }
         """
 
+        start_time = time.time()
+
+        logger.info('Starting transformation for %s season', paths['season'])
+
         per_game = pd.read_parquet(paths['per_game'])
         advanced = pd.read_parquet(paths['advanced'])
         team = {
@@ -184,11 +223,24 @@ def etl_pipeline():
         features_data = transformed_data['features']
         stats_data = transformed_data['stats']
 
+        logger.info('Rows transformed for %s season - features: %s, stats: %s',
+                    season,
+                    len(features_data),
+                    len(stats_data))
+        
+        logger.info('Saving transformed data to parquet files')
+
         features_path = f'/opt/airflow/data/features_{season}.parquet'
         stats_path = f'/opt/airflow/data/stats_{season}.parquet'
         
         features_data.to_parquet(features_path, index=False)
         stats_data.to_parquet(stats_path, index=False)
+
+        logger.info('Parquet files saved for %s season', season)
+
+        logger.info('Completed transformation for %s season in %.2f seconds',
+                    season, 
+                    time.time() - start_time)
 
         return {
             'features': features_path,
@@ -213,6 +265,10 @@ def etl_pipeline():
             FileNotFoundError: If any of the expected files are not found within the timeout period.
         """
 
+        start_time = time.time()
+
+        logger.info('Waiting for transformed files')
+
         timeout = 60
         interval = 5
 
@@ -225,9 +281,12 @@ def etl_pipeline():
 
             while not p.exists():
                 if time_waited >= timeout:
+                    logger.error('File not found at %s', file_path)
                     raise FileNotFoundError(f'No file found at {file_path}')
                 time.sleep(interval)
                 time_waited += interval
+
+        logger.info('All transformed files found after waiting %.2f seconds', time.time() - start_time)
         
         return paths
 
@@ -244,14 +303,26 @@ def etl_pipeline():
             paths (list[dict]): List of paths to the transformed parquet files for each season.
         """
 
+        start_time = time.time()
+
+        logger.info('Concatenating transformed data')
+
         features_list = [pd.read_parquet(path['features']) for path in paths]
         stats_list = [pd.read_parquet(path['stats']) for path in paths]
 
         df_features = pd.concat(features_list, axis=0).reset_index(drop=True)
         df_stats = pd.concat(stats_list, axis=0).reset_index(drop=True)
 
+        logger.info('Total rows to load - features: %s, stats: %s',
+                    len(df_features),
+                    len(df_stats))
+        
+        logger.info('Loading data into PostgreSQL database')
+
         load_to_database(df_features, user='etl', table_name='player_features', schema='stats')
         load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats')
+
+        logger.info('Data loaded into PostgreSQL database in %.2f seconds', time.time() - start_time)
 
 
     @task(trigger_rule='all_success')
@@ -261,6 +332,8 @@ def etl_pipeline():
         Executes only if all upstream tasks succeed, allowing for debugging in case of failures.
         """
 
+        logger.info('Starting cleanup of intermediate files in data directory')
+
         directory = Path('/opt/airflow/data')
 
         for item in directory.iterdir():
@@ -268,6 +341,8 @@ def etl_pipeline():
                 shutil.rmtree(item)
             else:
                 item.unlink()
+
+        logger.info('Cleanup completed, all intermediate files removed')
 
 
     seasons = list(range(MIN_SEASON, CURRENT_SEASON))
