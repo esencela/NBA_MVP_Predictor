@@ -96,10 +96,6 @@ def etl_pipeline():
                     len(df_east), 
                     len(df_west), 
                     len(df_mvp))
-        
-        # Empty MVP vote data is expected for current season
-        if df_mvp.empty:
-            logger.warning('No MVP voting data found for %s season', season)
 
         logger.info('Saving extracted data to parquet files')
 

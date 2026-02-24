@@ -1,6 +1,8 @@
 from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.ml.train import train_model
+import logging
+import time
 
 default_args = {
     'owner': 'airflow',
@@ -24,11 +26,19 @@ def ml_pipeline():
     This DAG trains the machine learning model using the features dataset in Postgres.
     """
 
+    logger = logging.getLogger(__name__)
+
     @task
     def train():
         """Trains the machine learning model."""
 
+        start_time = time.time()
+
+        logger.info('Starting model training')
+
         train_model()
+
+        logger.info('Model training completed in %.2f seconds', time.time() - start_time)
 
 
     train()

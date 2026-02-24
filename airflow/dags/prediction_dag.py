@@ -9,6 +9,8 @@ from source.airflow.utils import log_data_freshness
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from pathlib import Path
 import shutil
+import logging
+import time
 from source.config.settings import (
     CURRENT_SEASON
 )
@@ -47,6 +49,8 @@ def update_pipeline():
     7. Clean up intermediate parquet files.
     """
 
+    logger = logging.getLogger(__name__)
+
     @task(pool='api_pool')
     def extract(season: int) -> dict:
         """
@@ -75,15 +79,32 @@ def update_pipeline():
                 }
         """
 
+        start_time = time.time()
+
+        logger.info('Starting data extraction for %s season', season)
+
         data = extract_season_data(season)
 
         df_per_game = data['per_game']
         df_advanced = data['advanced']
         df_east = data['team']['east']
         df_west = data['team']['west']
-        df_mvp = data['mvp']
+        df_mvp = data['mvp']       
 
         data_freshness = data['last_update']
+
+        logger.info('Rows extracted - per_game: %s, advanced: %s, east: %s, west: %s, mvp: %s',
+                    len(df_per_game), 
+                    len(df_advanced), 
+                    len(df_east), 
+                    len(df_west), 
+                    len(df_mvp))
+        
+        # Empty MVP vote data is expected for current season
+        if df_mvp.empty:
+            logger.warning('No MVP voting data found for %s season', season)
+
+        logger.info('Saving extracted data to parquet files')
 
         per_game_path = f'/opt/airflow/data/per_game_{season}.parquet'
         advanced_path = f'/opt/airflow/data/advanced_{season}.parquet'
@@ -100,6 +121,12 @@ def update_pipeline():
         df_east.to_parquet(east_path, index=False)
         df_west.to_parquet(west_path, index=False)
         df_mvp.to_parquet(mvp_path, index=False)
+
+        logger.info('Parquet files saved for %s season', season)
+
+        logger.info('Completed extraction for %s season in %.2f seconds', 
+                    season, 
+                    time.time() - start_time)
 
         return {
             'per_game': per_game_path,
@@ -133,6 +160,10 @@ def update_pipeline():
                 }
         """
 
+        start_time = time.time()
+
+        logger.info('Starting data transformation for %s season', paths['season'])
+
         per_game = pd.read_parquet(paths['per_game'])
         advanced = pd.read_parquet(paths['advanced'])
         team = {
@@ -147,11 +178,24 @@ def update_pipeline():
         features_data = transformed_data['features']
         stats_data = transformed_data['stats']
 
+        logger.info('Rows transformed for %s season - features: %s, stats: %s',
+                    season,
+                    len(features_data),
+                    len(stats_data))
+
+        logger.info('Saving transformed data to parquet files')
+
         features_path = f'/opt/airflow/data/features_{season}.parquet'
         stats_path = f'/opt/airflow/data/stats_{season}.parquet'
         
         features_data.to_parquet(features_path, index=False)
         stats_data.to_parquet(stats_path, index=False)
+
+        logger.info('Parquet files saved')
+
+        logger.info('Completed transformation for %s season in %.2f seconds',
+                    season, 
+                    time.time() - start_time)
 
         return {
             'features': features_path,
@@ -172,13 +216,23 @@ def update_pipeline():
             paths (list[dict]): List of paths to the transformed parquet files for each season.
         """
 
+        start_time = time.time()
+
+        logger.info('Starting data loading')
+
         df_features = pd.read_parquet(paths['features'])
         df_stats = pd.read_parquet(paths['stats'])
 
+        logger.info('Removing existing data for %s season from database', CURRENT_SEASON)
+
         remove_season_data(CURRENT_SEASON)
+
+        logger.info('Loading current season data into database')
 
         load_to_database(df_features, user='etl', table_name='player_features', schema='stats', append=True)
         load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats', append=True)
+
+        logger.info('Data loading completed in %.2f seconds', time.time() - start_time)
 
 
     @task
@@ -189,10 +243,20 @@ def update_pipeline():
         Returns:
             str: Path to the saved predictions parquet file.
         """
+        start_time = time.time()
+
+        logger.info('Starting MVP predictions generation')
 
         file_path = f'/opt/airflow/data/predictions.parquet'
         predictions = get_predictions()
+
+        logger.info('Loading predictions into parquet file at %s', file_path)
+
         predictions.to_parquet(file_path, index=False)
+
+        logger.info('MVP predictions generated and saved to %s in %.2f seconds', 
+                    file_path, 
+                    time.time() - start_time)
 
         return file_path
     
@@ -205,9 +269,14 @@ def update_pipeline():
         Params:
             file_path (str): Path to the predictions parquet file.
         """
-        
+        start_time = time.time()
+
+        logger.info('Starting loading of MVP predictions into database')
+
         predictions = pd.read_parquet(file_path)
         load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
+
+        logger.info('MVP predictions loaded into database in %.2f seconds', time.time() - start_time)
 
 
     @task(trigger_rule='all_success')
@@ -222,6 +291,8 @@ def update_pipeline():
         Executes only if all upstream tasks succeed, allowing for debugging in case of failures.
         """
 
+        logger.info('Starting cleanup of intermediate files in data directory')
+
         directory = Path('/opt/airflow/data')
 
         for item in directory.iterdir():
@@ -229,6 +300,8 @@ def update_pipeline():
                 shutil.rmtree(item)
             else:
                 item.unlink()
+
+        logger.info('Cleanup completed, all intermediate files removed')
 
 
     extract_paths = extract(CURRENT_SEASON)
