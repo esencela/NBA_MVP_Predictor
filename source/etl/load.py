@@ -21,9 +21,6 @@ def load_to_database(df: pd.DataFrame, user: str, table_name: str, schema: str, 
         # Truncate table data to avoid issues with dependent views
         with engine.begin() as conn:
             conn.execute(text(f'TRUNCATE TABLE {schema}.{table_name};'))
-        # Ensure cascade for tables that have dependencies
-        #with engine.begin() as conn:
-        #    conn.execute(f'DROP TABLE IF EXISTS {schema}.{table_name} CASCADE;')
 
     df.to_sql(table_name,
             engine, 

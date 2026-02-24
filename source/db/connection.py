@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine # pyright: ignore[reportMissingImports]
-import os
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from source.config.settings import (
     ETL_POSTGRES_USER,

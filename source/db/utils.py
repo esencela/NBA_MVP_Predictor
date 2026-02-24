@@ -1,5 +1,4 @@
 from source.db.connection import get_engine
-import pathlib
 
 def remove_season_data(season: int):
     """
