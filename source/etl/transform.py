@@ -263,11 +263,8 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
 
     # Boolean mask of players that have played for multiple teams
     multi_team_mask = df['Team'].str.contains('\\d', regex=True)
-
+    
     # Group by player and calculate weighted win rate - Players with one team will be unaffected
-    #weighted_team_stats = (df[~multi_team_mask].groupby('player_id')[['player_id', 'Player', 'W/L%', 'G']]
-    #.apply(lambda x: (x['W/L%'] * x['G']).sum() / x['G'].sum()).reset_index(name='W/L%_imputed'))
-
     weighted_team_stats = (df[~multi_team_mask].groupby('player_id')
                            .apply(lambda x: pd.Series({
                                'W/L%_imputed': (x['W/L%'] * x['G']).sum() / x['G'].sum()

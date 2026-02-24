@@ -78,15 +78,3 @@ CREATE TABLE IF NOT EXISTS metadata.data_freshness (
     data_freshness TIMESTAMPTZ NOT NULL,
     trigger_type TEXT NOT NULL
 );
-
--- Table tracking updates to mvp predictions
-CREATE TABLE IF NOT EXISTS metadata.update_runs (
-    update_id SERIAL PRIMARY KEY,
-    dag_id TEXT NOT NULL,
-    run_id TEXT NOT NULL,
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ,
-    status TEXT NOT NULL,
-    trigger_type TEXT NOT NULL,
-    error_message TEXT
-);

@@ -49,16 +49,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ml_user;
 
 ALTER SCHEMA serving OWNER TO ml_user;
 
--- Metadata Schema
-GRANT USAGE, CREATE ON SCHEMA metadata TO ml_user;
-GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON metadata.update_runs TO ml_user;
-GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA metadata TO ml_user;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA metadata
-GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ml_user;
-
-ALTER TABLE metadata.update_runs OWNER TO ml_user;
-
 -- Set privileges to app in database
 -- Serving Schema
 GRANT USAGE ON SCHEMA serving TO app_user;

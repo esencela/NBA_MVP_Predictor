@@ -2,17 +2,9 @@ import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from bs4 import BeautifulSoup # pyright: ignore[reportMissingImports]
 from typing import List
 from pathlib import Path
-import html5lib # pyright: ignore[reportMissingModuleSource]
-import requests # pyright: ignore[reportMissingModuleSource]
-import cloudscraper # pyright: ignore[reportMissingImports]
-import time
 from datetime import datetime
 import logging
-from source.config.settings import (
-    CURRENT_SEASON,
-    LOCAL_EXTRACT,
-    SLEEP_TIME
-)
+from source.config.settings import CURRENT_SEASON
 
 def extract_season_data(season: int) -> dict:
     """
@@ -42,16 +34,9 @@ def extract_season_data(season: int) -> dict:
     """
 
     per_game = extract_per_game_season_data(season)
-    time.sleep(SLEEP_TIME)
-
     advanced = extract_advanced_season_data(season)
-    time.sleep(SLEEP_TIME)
-
     team = extract_team_season_data(season)
-    time.sleep(SLEEP_TIME)
-    
     mvp = extract_mvp_vote_data(season)
-    time.sleep(SLEEP_TIME)
 
     logging.info(f'Extracted data for {season} season')
 
@@ -88,7 +73,7 @@ def extract_season_data(season: int) -> dict:
 
 def extract_per_game_season_data(season: int) -> dict:
     """
-    Extract NBA per-game player statistics for a given season from Basketball Reference.
+    Extract NBA per-game player statistics for a given season from locally saved Basketball Reference html page.
 
     Params:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
@@ -101,23 +86,16 @@ def extract_per_game_season_data(season: int) -> dict:
             }
     """
 
-    # For local extraction use file path
-    if LOCAL_EXTRACT:
-        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_per_game.html')
-    else:
-        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_per_game.html'
+    url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_per_game.html')
 
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
     df = tables[0]
 
-    # Add player IDs seperately, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'per_game_stats')
 
-    # Retrieve last update time for season data, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
+    # Retrieves last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
     # Last row contains unnecessary data, drop it from table
@@ -132,7 +110,7 @@ def extract_per_game_season_data(season: int) -> dict:
 
 def extract_advanced_season_data(season: int) -> dict:
     """
-    Extract NBA advanced player statistics for a given season from Basketball Reference.
+    Extract NBA advanced player statistics for a given season from locally saved Basketball Reference html page.
 
     Params:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
@@ -145,23 +123,16 @@ def extract_advanced_season_data(season: int) -> dict:
             }
     """
 
-    # For local extraction use file path
-    if LOCAL_EXTRACT:
-        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_advanced.html')
-    else:
-        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_advanced.html'
+    url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_advanced.html')
 
     tables = retrieve_tables_from_url(url)
 
     # Required data is kept in first table
     df = tables[0]
 
-    # Add player IDs seperately, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'advanced')
 
-    # Retrieve last update time for season data, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
+    # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
     # Last row contains unnecessary data, drop it from table
@@ -176,7 +147,7 @@ def extract_advanced_season_data(season: int) -> dict:
 
 def extract_team_season_data(season: int) -> dict:
     """
-    Extract NBA team statistics for a given season from Basketball Reference.
+    Extract NBA team statistics for a given season from locally saved Basketball Reference html page.
 
     Params:
         season (int): NBA season year (e.g. 2024 for the 2023–24 season).
@@ -190,11 +161,7 @@ def extract_team_season_data(season: int) -> dict:
             }
     """
 
-    # For local extraction use file path
-    if LOCAL_EXTRACT:
-        url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_standings.html')
-    else:
-        url = f'https://www.basketball-reference.com/leagues/NBA_{season}_standings.html'
+    url = Path(f'/opt/airflow/html_snapshots/NBA_{season}_standings.html')
 
     tables = retrieve_tables_from_url(url)
 
@@ -205,8 +172,7 @@ def extract_team_season_data(season: int) -> dict:
     df_east.reset_index(drop=True, inplace=True)
     df_west.reset_index(drop=True, inplace=True)
 
-    # Retrieve last update time for season data, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
+    # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
     return {
@@ -227,13 +193,9 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
         pd.DataFrame: Raw MVP voting data for the given season.
     """
 
-    # For local extraction use file path
-    if LOCAL_EXTRACT:
-        url = Path(f'/opt/airflow/html_snapshots/awards_{season}.html')
-    else:    
-        url = f"https://www.basketball-reference.com/awards/awards_{season}.html"
+    url = Path(f'/opt/airflow/html_snapshots/awards_{season}.html')
 
-    # Return empty dataframe - Current Season will have no mvp voting data
+    # Current Season will have no mvp voting data, return empty dataframe
     if (season == CURRENT_SEASON):
         return { 
             'data': pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
@@ -246,12 +208,9 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     # Required data is kept in first table
     df = tables[0]
 
-    # Add player IDs seperately, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
     df['player_id'] = retrieve_player_ids(url, 'mvp')
 
-    # Retrieve last update time for season data, sleeping to avoid request limits
-    time.sleep(SLEEP_TIME)
+    # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
     df.reset_index(drop=True, inplace=True)
@@ -264,16 +223,16 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
 
 def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
     """
-    Retrieve all HTML tables from a specified URL
+    Retrieve all tables from a html page.
     
     Params:
-        url (str): The URL of webpage containing HTML tables.
+        url (str): The path of HTML file containing tables.
 
     Returns:
-        list[pd.DataFrame]: List of tables retrieved from the webpage
+        list[pd.DataFrame]: List of tables retrieved from HTML.
 
     Raises:
-        ValueError: If no tables are found at the specified URL
+        ValueError: If no tables are found at the specified path.
     """    
     
     tables = pd.read_html(url)
@@ -286,25 +245,18 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
 
 def retrieve_player_ids(url: str, table_id: str) -> List[str]:
     """
-    Retrieve player IDs from a specified URL and table ID using cloudscraper to bypass Cloudflare bot protections.
+    Retrieve player IDs from html page.
     
     Params:
-        url (str): The URL of HTML file containing the target table.
+        url (str): The path of HTML file containing the target table.
         table_id (str): The HTML id attribute of the target table.
 
     Returns:
-        list[str]: List of player IDs retrieved from the specified table
+        list[str]: List of player IDs retrieved from the specified table.
     """
-    if LOCAL_EXTRACT:
-        # For local extraction, read HTML content directly from file system
-        content = url.read_text()
-        soup = BeautifulSoup(content, 'html.parser')
-    else:
-        # For non-local extraction, use cloudscraper to bypass Cloudflare protections
-        # WILL GET IP BANNED
-        scraper = cloudscraper.create_scraper()
-        response = scraper.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+
+    content = url.read_text()
+    soup = BeautifulSoup(content, 'html.parser')
 
     table = soup.find('table', id=table_id).find('tbody')
     player_ids = []   
@@ -328,16 +280,8 @@ def retrieve_last_update_time(url: str):
         url (str): The URL of HTML file containing the last update time.
     """
 
-    if LOCAL_EXTRACT:
-        # For local extraction, read HTML content directly from file system
-        content = url.read_text(encoding='utf-8')
-        soup = BeautifulSoup(content, 'html.parser')
-    else:
-        # For non-local extraction, use cloudscraper to bypass Cloudflare protections 
-        # WILL GET IP BANNED
-        scraper = cloudscraper.create_scraper()
-        response = scraper.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+    content = url.read_text(encoding='utf-8')
+    soup = BeautifulSoup(content, 'html.parser')
 
     # Last update time is stored in a strong tag with the text 'Site Last Updated:'
     tag = soup.find('strong', string='Site Last Updated:')
@@ -347,7 +291,6 @@ def retrieve_last_update_time(url: str):
     else:
         raise ValueError(f'Could not find last update time in url: {url}')
     
-    # Clean string of double and trailing spaces
     cleaned_string = update_string.strip().replace('  ', ' ')
     
     # Convert string to datetime object
@@ -368,4 +311,5 @@ def flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col) for col in df.columns.values]
+        
     return df
