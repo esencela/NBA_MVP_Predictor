@@ -1,6 +1,8 @@
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from sklearn.preprocessing import StandardScaler # pyright: ignore[reportMissingModuleSource]
+import logging
 
+logger = logging.getLogger(__name__)
 
 def transform_season_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, raw_team: pd.DataFrame, raw_mvp: pd.DataFrame, season: int) -> dict:
     """
@@ -10,7 +12,7 @@ def transform_season_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, 
     - Cleans raw per-game, advanced, team, and MVP voting datasets
     - Merges all sources into a unified dataset
     - Imputes missing team win rate values
-    - Adds a season identifier
+    - Adds a season identifier column
     - Engineers domain-specific features
     - Applies feature scaling
     - Returns a consistently ordered feature set for downstream modeling
@@ -44,6 +46,11 @@ def transform_season_data(raw_player: pd.DataFrame, raw_advanced: pd.DataFrame, 
     df_stats = transformed_data[stats_order]
     df_features = enriched_data[feature_order]
 
+    logger.info('Transformed data for %s season - features: %s, stats: %s',
+                    season,
+                    df_features.shape,
+                    df_stats.shape)
+
     return {
         'features': df_features,
         'stats': df_stats
@@ -65,6 +72,8 @@ def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
     df = df.copy()
     df['Season'] = season
 
+    logger.info('Added Season column: %s', season)
+
     return df
 
 
@@ -82,11 +91,20 @@ def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
 
+    logger.info('Cleaning per-game data, initial shape: %s', df.shape)
+
     columns_to_keep = ['player_id', 'Player', 'Team', 'G', 'MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
 
     df = df[columns_to_keep]
 
+    logger.info('Per-game data columns kept: %s', df.columns.tolist())
+
+    length_before = len(df)
     df.dropna(inplace=True)
+    length_after = len(df)
+
+    logger.info('Dropped %s rows with null values from per-game data', length_before - length_after)
+    logger.info('Per-game data cleaned with shape: %s', df.shape)
 
     return df
 
@@ -102,13 +120,23 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned DataFrame with only the specified columns.
     """
+
     df = df.copy()
+
+    logger.info('Cleaning advanced data, initial shape: %s', df.shape)
 
     columns_to_keep = ['player_id', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
 
     df = df[columns_to_keep]
 
+    logger.info('Advanced data columns kept: %s', df.columns.tolist())
+
+    length_before = len(df)
     df.dropna(inplace=True)
+    length_after = len(df)
+
+    logger.info('Dropped %s rows with null values from advanced data', length_before - length_after)
+    logger.info('Advanced data cleaned with shape: %s', df.shape)
 
     return df
 
@@ -126,25 +154,35 @@ def clean_team_data(dict_team: dict) -> pd.DataFrame:
     df_east = dict_team['east'].copy()
     df_west = dict_team['west'].copy()
 
+    logger.info('Cleaning team data, initial shapes - east: %s, west: %s', df_east.shape, df_west.shape)
+
     filter = df_east['Eastern Conference'].str.contains('Division')
     df_east = df_east[~filter]
 
     filter = df_west['Western Conference'].str.contains('Division')
     df_west = df_west[~filter]
 
+    logger.info('Filtered title rows from team data')
+
     # Keep only letters and spaces then strip extra spaces
     df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
     df_west['Western Conference'] = df_west['Western Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
+
+    logger.info('Cleaned team names in team data')
 
     df_east = df_east.rename({'Eastern Conference': 'Team'}, axis=1)
     df_west = df_west.rename({'Western Conference': 'Team'}, axis=1)
 
     columns_to_keep = ['Team', 'W/L%']
 
+    logger.info('Team data columns kept: %s', columns_to_keep)
+
     df_east = df_east[columns_to_keep]
     df_west = df_west[columns_to_keep]
 
     df_ovr = pd.concat([df_east, df_west])
+
+    logger.info('Concatenated conference team data')
 
     df_ovr['W/L%'] = df_ovr['W/L%'].astype('float')
 
@@ -186,10 +224,11 @@ def clean_team_data(dict_team: dict) -> pd.DataFrame:
                  'Seattle SuperSonics': 'SEA',
                  'New Orleans/Oklahoma City Hornets': 'NOK'}
         
-        return codes[team_name]
-    
+        return codes[team_name]    
 
     df_ovr['Team'] = df_ovr['Team'].map(team_code)
+
+    logger.info('Team data cleaned with shape: %s', df_ovr.shape)
 
     return df_ovr
 
@@ -207,6 +246,8 @@ def clean_mvp_vote_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
 
+    logger.info('Cleaning MVP vote data, initial shape: %s', df.shape)
+
     # Rename nested column names
     df = df.set_axis(['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
                               'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id'], 
@@ -214,7 +255,11 @@ def clean_mvp_vote_data(df: pd.DataFrame) -> pd.DataFrame:
     
     columns_to_keep = ['player_id', 'Share']
 
+    logger.info('MVP vote data columns kept: %s', columns_to_keep)
+
     df = df[columns_to_keep]
+
+    logger.info('MVP vote data cleaned with shape: %s', df.shape)
 
     return df
 
@@ -234,14 +279,20 @@ def merge_data(per_game_data: pd.DataFrame, advanced_data: pd.DataFrame, team_da
     
     """
 
+    logger.info('Merging datasets')
+
     df = per_game_data.merge(advanced_data, how='inner', on='player_id')
 
     df = df.merge(team_data, how='left', on='Team')
 
     df = df.merge(mvp_data, how='left', on='player_id')
 
+    null_count = df['Share'].isnull().sum()
+
     # Null values are players with zero vote share
     df['Share'] = df['Share'].fillna(0)
+
+    logger.info('Filled %s null values in MVP vote share with 0', null_count)
 
     return df
 
@@ -261,8 +312,12 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
+    logger.info('Imputing win rate for players on multiple teams')
+
     # Boolean mask of players that have played for multiple teams
     multi_team_mask = df['Team'].str.contains('\\d', regex=True)
+
+    multi_team_count = multi_team_mask.sum()
     
     # Group by player and calculate weighted win rate - Players with one team will be unaffected
     weighted_team_stats = (df[~multi_team_mask].groupby('player_id')
@@ -274,10 +329,11 @@ def impute_win_rate(df: pd.DataFrame) -> pd.DataFrame:
     df = df.merge(weighted_team_stats, on='player_id', how='left')
     df.loc[multi_team_mask, 'W/L%'] = df.loc[multi_team_mask, 'W/L%_imputed']
 
-    # Clean DataFrame
     df.drop_duplicates(subset=['player_id'], keep='first', inplace=True) 
     df.drop(columns='W/L%_imputed', inplace=True)
     df['W/L%'] = df['W/L%'].round(3)
+
+    logger.info('Imputed win rate for %s players on multiple teams', multi_team_count)
 
     return df
 
@@ -296,8 +352,12 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     
     df = df.copy()
 
+    logger.info('Building features for merged data')
+
     # Computer new feature - VORP * Win Percentage
     df['VORP_W/L'] = df['VORP'] * df['W/L%']
+
+    logger.info('Built VORP_W/L feature')
 
     return df
 
@@ -316,6 +376,8 @@ def scale_features(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
     scaled_columns = ['MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK', 'TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%', 'VORP_W/L']
+
+    logger.info('Scaling features for: %s', scaled_columns)
 
     scaler = StandardScaler()
     scaler.fit(df[scaled_columns])

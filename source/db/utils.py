@@ -1,4 +1,7 @@
 from source.db.connection import get_engine
+import logging
+
+logger = logging.getLogger(__name__)
 
 def remove_season_data(season: int):
     """
@@ -7,6 +10,8 @@ def remove_season_data(season: int):
     Params:
         season (int): The season year to be removed from the table.
     """
+
+    logger.info('Removing existing data for %s season from database', season)
 
     engine = get_engine(user='etl')
 

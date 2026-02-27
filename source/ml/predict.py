@@ -1,10 +1,12 @@
 from source.ml.model import LGBMModel
 from source.db.connection import query_data
+import logging
 from source.config.settings import (
     CURRENT_SEASON,
     MVP_MODEL_PATH
 )
 
+logger = logging.getLogger(__name__)
 
 def get_predictions():
     """
@@ -20,6 +22,8 @@ def get_predictions():
         pd.DataFrame: DataFrame holding model predictions along with player and season info.
     """
 
+    logger.info('Generating predictions for %s season data', CURRENT_SEASON)
+
     model = LGBMModel.load(MVP_MODEL_PATH)
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" = {CURRENT_SEASON}'
@@ -34,5 +38,7 @@ def get_predictions():
     yhat = model.predict(X_current[feature_columns])
 
     predictions['Predicted_Share'] = yhat
+
+    logger.info('Generated %s predictions', len(predictions))
 
     return predictions

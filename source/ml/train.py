@@ -1,14 +1,18 @@
 from source.ml.model import LGBMModel
 from source.ml.preprocessing import add_features
 from source.db.connection import query_data
+import logging
 from source.config.settings import (
     CURRENT_SEASON,
     MVP_MODEL_PATH
 )
 
+logger = logging.getLogger(__name__)
 
 def train_model():
     """Trains model using historic season data and saves model to MODEL_PATH."""
+
+    logger.info('Training model using historic season data')
 
     query = f'SELECT * FROM stats.player_features WHERE "Season" < {CURRENT_SEASON}'
 

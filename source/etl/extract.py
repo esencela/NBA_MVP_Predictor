@@ -6,6 +6,8 @@ from datetime import datetime
 import logging
 from source.config.settings import CURRENT_SEASON
 
+logger = logging.getLogger(__name__)
+
 def extract_season_data(season: int) -> dict:
     """
     Extract NBA datasets for a given season from Basketball Reference, implementing sleep to avoid request limits.
@@ -38,8 +40,6 @@ def extract_season_data(season: int) -> dict:
     team = extract_team_season_data(season)
     mvp = extract_mvp_vote_data(season)
 
-    logging.info(f'Extracted data for {season} season')
-
     dict_freshness = {
         'per_game': per_game['last_update'],
         'advanced': advanced['last_update'],
@@ -57,7 +57,10 @@ def extract_season_data(season: int) -> dict:
     update_times = set(dict_freshness[k] for k in keys)
 
     if len(update_times) > 1:
+        logger.error('Datasets have different update times: %s', dict_freshness)
         raise ValueError(f'Datasets have different update times: {dict_freshness}')
+    
+    logger.info(f'Extracted data for {season} season')
 
     return {
         'per_game': per_game['data'],
@@ -98,9 +101,13 @@ def extract_per_game_season_data(season: int) -> dict:
     # Retrieves last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
+    logger.info('Stats last updated on %s', last_update)
+
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
-    df.reset_index(drop=True, inplace=True)    
+    df.reset_index(drop=True, inplace=True)
+
+    logger.info('Extracted per-game data for %s season with %s rows', season, len(df)) 
 
     return {
         'data': df,
@@ -135,9 +142,13 @@ def extract_advanced_season_data(season: int) -> dict:
     # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
+    logger.info('Stats last updated on %s', last_update)
+
     # Last row contains unnecessary data, drop it from table
     df.drop(df.tail(1).index, inplace=True)
     df.reset_index(drop=True, inplace=True)
+
+    logger.info('Extracted advanced data for %s season with %s rows', season, len(df)) 
     
     return {
         'data': df,
@@ -175,6 +186,13 @@ def extract_team_season_data(season: int) -> dict:
     # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
+    logger.info('Stats last updated on %s', last_update)
+
+    logger.info('Extracted team data for %s season with %s rows for east and %s rows for west', 
+                season, 
+                len(df_east), 
+                len(df_west))
+
     return {
         'east': df_east,
         'west': df_west,
@@ -197,6 +215,8 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
 
     # Current Season will have no mvp voting data, return empty dataframe
     if (season == CURRENT_SEASON):
+        logger.warning('No MVP voting data available for current season, returning empty dataframe')
+
         return { 
             'data': pd.DataFrame(columns=['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
                                      'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id_']),
@@ -213,7 +233,11 @@ def extract_mvp_vote_data(season: int) -> pd.DataFrame:
     # Retrieve last update time of local html snapshot
     last_update = retrieve_last_update_time(url)
 
+    logger.info('MVP voting data last updated on %s', last_update)
+
     df.reset_index(drop=True, inplace=True)
+
+    logger.info('Extracted MVP voting data for %s season with %s rows', season, len(df))
 
     return {
         'data': flatten_columns(df),
@@ -238,7 +262,10 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
     tables = pd.read_html(url)
 
     if not tables:
-        raise ValueError(f'No tables found in url: {url}')
+        logger.error('No tables found at %s', url)
+        raise ValueError(f'No tables found at {url}')
+    
+    logger.info('Retrieved %s tables from %s', len(tables), url)
     
     return tables
 

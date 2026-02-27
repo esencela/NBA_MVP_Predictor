@@ -90,13 +90,6 @@ def etl_pipeline():
         df_west = data['team']['west']
         df_mvp = data['mvp']
 
-        logger.info('Rows extracted - per_game: %s, advanced: %s, east: %s, west: %s, mvp: %s',
-                    len(df_per_game), 
-                    len(df_advanced), 
-                    len(df_east), 
-                    len(df_west), 
-                    len(df_mvp))
-
         logger.info('Saving extracted data to parquet files')
 
         per_game_path = f'/opt/airflow/data/per_game_{season}.parquet'
@@ -218,11 +211,6 @@ def etl_pipeline():
 
         features_data = transformed_data['features']
         stats_data = transformed_data['stats']
-
-        logger.info('Rows transformed for %s season - features: %s, stats: %s',
-                    season,
-                    len(features_data),
-                    len(stats_data))
         
         logger.info('Saving transformed data to parquet files')
 
@@ -301,7 +289,7 @@ def etl_pipeline():
 
         start_time = time.time()
 
-        logger.info('Concatenating transformed data')
+        logger.info('Loading transformed data into database')
 
         features_list = [pd.read_parquet(path['features']) for path in paths]
         stats_list = [pd.read_parquet(path['stats']) for path in paths]
@@ -309,16 +297,10 @@ def etl_pipeline():
         df_features = pd.concat(features_list, axis=0).reset_index(drop=True)
         df_stats = pd.concat(stats_list, axis=0).reset_index(drop=True)
 
-        logger.info('Total rows to load - features: %s, stats: %s',
-                    len(df_features),
-                    len(df_stats))
-        
-        logger.info('Loading data into PostgreSQL database')
-
         load_to_database(df_features, user='etl', table_name='player_features', schema='stats')
         load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats')
 
-        logger.info('Data loaded into PostgreSQL database in %.2f seconds', time.time() - start_time)
+        logger.info('Data loaded into database in %.2f seconds', time.time() - start_time)
 
 
     @task(trigger_rule='all_success')

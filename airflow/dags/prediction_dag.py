@@ -92,13 +92,6 @@ def update_pipeline():
         df_mvp = data['mvp']       
 
         data_freshness = data['last_update']
-
-        logger.info('Rows extracted - per_game: %s, advanced: %s, east: %s, west: %s, mvp: %s',
-                    len(df_per_game), 
-                    len(df_advanced), 
-                    len(df_east), 
-                    len(df_west), 
-                    len(df_mvp))
         
         # Empty MVP vote data is expected for current season
         if df_mvp.empty:
@@ -178,11 +171,6 @@ def update_pipeline():
         features_data = transformed_data['features']
         stats_data = transformed_data['stats']
 
-        logger.info('Rows transformed for %s season - features: %s, stats: %s',
-                    season,
-                    len(features_data),
-                    len(stats_data))
-
         logger.info('Saving transformed data to parquet files')
 
         features_path = f'/opt/airflow/data/features_{season}.parquet'
@@ -218,16 +206,12 @@ def update_pipeline():
 
         start_time = time.time()
 
-        logger.info('Starting data loading')
+        logger.info('Loading current season data into database')
 
         df_features = pd.read_parquet(paths['features'])
         df_stats = pd.read_parquet(paths['stats'])
 
-        logger.info('Removing existing data for %s season from database', CURRENT_SEASON)
-
         remove_season_data(CURRENT_SEASON)
-
-        logger.info('Loading current season data into database')
 
         load_to_database(df_features, user='etl', table_name='player_features', schema='stats', append=True)
         load_to_database(df_stats, user='etl', table_name='player_stats', schema='stats', append=True)
