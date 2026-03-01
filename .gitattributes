@@ -3,4 +3,4 @@
 
 # Ignore html files and notebooks from language detection
 html_snapshots/* linguist-vendored
-notebooks/* linguist-vendored
+*.ipynb linguist-vendored
