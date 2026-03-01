@@ -1,5 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
-# Ignore html files from language detection
+# Ignore html files and notebooks from language detection
 html_snapshots/* linguist-vendored
+notebooks/* linguist-vendored
