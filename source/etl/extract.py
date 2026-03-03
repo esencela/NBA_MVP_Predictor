@@ -282,7 +282,7 @@ def retrieve_player_ids(url: str, table_id: str) -> List[str]:
         list[str]: List of player IDs retrieved from the specified table.
     """
 
-    content = url.read_text()
+    content = url.read_text(encoding='utf-8')
     soup = BeautifulSoup(content, 'html.parser')
 
     table = soup.find('table', id=table_id).find('tbody')

@@ -2,5 +2,5 @@
 * text=auto
 
 # Ignore html files and notebooks from language detection
-html_snapshots/* linguist-vendored
+*.html linguist-vendored
 *.ipynb linguist-vendored
