@@ -259,11 +259,11 @@ def retrieve_tables_from_url(url: str) -> List[pd.DataFrame]:
         ValueError: If no tables are found at the specified path.
     """    
     
-    tables = pd.read_html(url)
-
-    if not tables:
+    try:
+        tables = pd.read_html(url)
+    except ValueError as e:
         logger.error('No tables found at %s', url)
-        raise ValueError(f'No tables found at {url}')
+        raise ValueError(f'No tables found at {url}') from e
     
     logger.info('Retrieved %s tables from %s', len(tables), url)
     
