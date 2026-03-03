@@ -8,7 +8,14 @@ st.set_page_config(
 
 st.title('Leaderboard')
 
-leaderboard_query = "SELECT * FROM serving.leaderboard"
+leaderboard_query = """
+    SELECT 
+        RANK() OVER(
+            ORDER BY "Predicted_Share" DESC
+        ) AS "Rank",
+        * 
+    FROM serving.leaderboard
+"""
 
 df_mvp = query_data(leaderboard_query, user='app')
 df_mvp.drop(columns=['player_id'], inplace=True)
