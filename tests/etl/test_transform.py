@@ -1,5 +1,5 @@
-import pytest
-import pandas as pd
+import pytest # pyright: ignore[reportMissingImports]
+import pandas as pd # pyright: ignore[reportMissingModuleSource]
 import source.etl.transform as transform
 
 
