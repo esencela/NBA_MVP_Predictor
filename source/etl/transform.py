@@ -70,7 +70,12 @@ def add_season_column(df: pd.DataFrame, season: int) -> pd.DataFrame:
     """
 
     df = df.copy()
-    df['Season'] = season
+
+    try:
+        df['Season'] = int(season)
+    except ValueError:
+        logger.error('Season value must be an integer, got: %s', season)
+        raise ValueError(f'Season value must be an integer, got: {season}')
 
     logger.info('Added Season column: %s', season)
 
@@ -104,6 +109,15 @@ def clean_per_game_data(df: pd.DataFrame) -> pd.DataFrame:
     length_after = len(df)
 
     logger.info('Dropped %s rows with null values from per-game data', length_before - length_after)
+
+    numeric_columns = ['MP', 'PTS', 'AST', 'TRB', 'STL', 'BLK']
+
+    try:
+        df[numeric_columns] = df[numeric_columns].astype(float)
+    except ValueError as e:
+        logger.error('Error occurred while converting columns to numeric: %s', e)
+        raise ValueError('Error occurred while converting columns to numeric: ' + str(e))
+
     logger.info('Per-game data cleaned with shape: %s', df.shape)
 
     return df
@@ -136,6 +150,15 @@ def clean_advanced_data(df: pd.DataFrame) -> pd.DataFrame:
     length_after = len(df)
 
     logger.info('Dropped %s rows with null values from advanced data', length_before - length_after)
+
+    numeric_columns = ['TS%', 'PER', 'WS', 'BPM', 'VORP', 'USG%']
+
+    try:
+        df[numeric_columns] = df[numeric_columns].astype(float)
+    except ValueError as e:
+        logger.error('Error occurred while converting columns to numeric: %s', e)
+        raise ValueError('Error occurred while converting columns to numeric: ' + str(e))
+
     logger.info('Advanced data cleaned with shape: %s', df.shape)
 
     return df
@@ -184,7 +207,11 @@ def clean_team_data(dict_team: dict) -> pd.DataFrame:
 
     logger.info('Concatenated conference team data')
 
-    df_ovr['W/L%'] = df_ovr['W/L%'].astype('float')
+    try:
+        df_ovr['W/L%'] = df_ovr['W/L%'].astype('float')
+    except ValueError as e:
+        logger.error('Error occurred while converting W/L column to numeric: %s', e)
+        raise ValueError('Error occurred while converting W/L column to numeric: ' + str(e))
 
     # Return a three letter code for a specified team name
     def team_code(team_name):
@@ -226,7 +253,11 @@ def clean_team_data(dict_team: dict) -> pd.DataFrame:
         
         return codes[team_name]    
 
-    df_ovr['Team'] = df_ovr['Team'].map(team_code)
+    try:
+        df_ovr['Team'] = df_ovr['Team'].map(team_code)
+    except KeyError as e:
+        logger.error('Team name not recognized: %s', e)
+        raise ValueError('Team name not recognized: %s', e)
 
     logger.info('Team data cleaned with shape: %s', df_ovr.shape)
 
@@ -248,16 +279,26 @@ def clean_mvp_vote_data(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info('Cleaning MVP vote data, initial shape: %s', df.shape)
 
-    # Rename nested column names
-    df = df.set_axis(['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
-                              'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id'], 
-                               axis=1)
+    try:
+        # Rename nested column names
+        df = df.set_axis(['rank', 'Player', 'Age', 'Team', 'First', 'Pts Won', 'Pts Max', 'Share', 'G', 'MP', 'PTS',
+                                'TRB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%', 'WS', 'WS/48', 'player_id'], 
+                                axis=1)
+    except ValueError as e:
+        logger.error('Error occurred while renaming columns: %s', e)
+        raise ValueError('Error occurred while renaming columns: ' + str(e))
     
     columns_to_keep = ['player_id', 'Share']
 
     logger.info('MVP vote data columns kept: %s', columns_to_keep)
 
     df = df[columns_to_keep]
+
+    try:
+        df['Share'] = df['Share'].astype(float)
+    except ValueError as e:
+        logger.error('Error occurred while converting Share column to numeric: %s', e)
+        raise ValueError('Error occurred while converting Share column to numeric: ' + str(e))
 
     logger.info('MVP vote data cleaned with shape: %s', df.shape)
 
