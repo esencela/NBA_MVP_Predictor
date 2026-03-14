@@ -36,15 +36,15 @@ def load_to_database(df: pd.DataFrame, user: str, table_name: str, schema: str, 
             index=False)
 
     
-    def load_to_local(df: pd.DataFrame, path: str):
-        """
-        Loads a given DataFrame into a local CSV file.
+def load_to_local(df: pd.DataFrame, path: str):
+    """
+    Loads a given DataFrame into a local CSV file.
 
-        Params:
-            df (pd.DataFrame): DataFrame to be loaded into local CSV.
-            path (str): File path for local CSV.
-        """
+    Params:
+        df (pd.DataFrame): DataFrame to be loaded into local CSV.
+        path (str): File path for local CSV.
+    """
 
-        logger.info('Loading data to local CSV at %s with %d rows', path, len(df))
+    logger.info('Loading data to local CSV at %s with %d rows', path, len(df))
 
-        df.to_csv(path, index=False)
+    df.to_csv(path, index=False)
