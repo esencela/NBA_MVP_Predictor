@@ -29,7 +29,7 @@ df_mvp['Team_Logo'] = df_mvp['Team'].apply(
 
 df_mvp.drop(columns=['player_id', 'Team'], inplace=True)
 
-#Reorder columns
+# Reorder columns
 df_mvp = df_mvp[['Rank', 'Headshot', 'Player', 'Team_Logo', 'MP','PTS', 'AST', 'TRB', 'STL', 'BLK', 'Predicted_Share']]
 
 st.title('NBA MVP Predictor :basketball:')
@@ -75,6 +75,6 @@ st.dataframe(
 
 # Read data freshness table from github CSV file
 df_update = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/main/streamlit/data/data_freshness.csv')
-data_freshness = pd.to_datetime(df_update['data_freshness'][0]).date()
+data_freshness = pd.to_datetime(df_update['data_freshness'][0])
 
 st.caption(f':clock2: Stats last updated: {data_freshness}')
