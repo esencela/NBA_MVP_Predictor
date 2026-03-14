@@ -1,28 +1,20 @@
 import streamlit as st
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
-from source.db.connection import query_data
 from source.config.settings import CURRENT_SEASON
 
 st.set_page_config(
     page_title="NBA MVP Predictor"
 )
 
-leaderboard_query = """
-    SELECT 
-        RANK() OVER(
-            ORDER BY "Predicted_Share" DESC
-        ) AS "Rank",
-        * 
-    FROM serving.leaderboard
-"""
-
-df_mvp = query_data(leaderboard_query, user='app')
+# Read leaderboard data from github CSV file
+df_mvp = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/refs/heads/main/streamlit/data/leaderboard.csv')
 
 # Add headshot URLs based on player_id
 df_mvp['Headshot'] = df_mvp['player_id'].apply(
     lambda x: f'https://basketball-reference.com/req/202212091/images/headshots/{x}.jpg'
 )
 
+# Add team logo URLs based on team abbreviation and season
 df_mvp['Team_Logo'] = df_mvp['Team'].apply(
     lambda x: f'https://cdn.ssref.net/req/202603120/tlogo/bbr/{x}-{CURRENT_SEASON}.png'
 )
@@ -73,14 +65,8 @@ st.dataframe(
     hide_index=True
 )
 
-update_query = """
-    SELECT data_freshness
-    FROM metadata.data_freshness
-    ORDER BY time_updated DESC
-    LIMIT 1
-"""
-
-df_update = query_data(update_query, user='app')
+# Read data freshness table from github CSV file
+df_update = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/refs/heads/main/streamlit/data/data_freshness.csv')
 data_freshness = pd.to_datetime(df_update['data_freshness'][0]).date()
 
 st.caption(f':clock2: Stats last updated: {data_freshness}')
