@@ -2,7 +2,7 @@ from airflow.decorators import dag, task # pyright: ignore[reportMissingImports]
 from datetime import datetime, timedelta
 from source.etl.extract import extract_season_data
 from source.etl.transform import transform_season_data
-from source.etl.load import load_to_database
+from source.etl.load import load_to_database, load_to_local
 from source.ml.predict import get_predictions
 from source.db.utils import remove_season_data
 from source.airflow.utils import log_data_freshness
@@ -258,9 +258,11 @@ def update_pipeline():
         logger.info('Starting loading of MVP predictions into database')
 
         predictions = pd.read_parquet(file_path)
-        load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
 
-        logger.info('MVP predictions loaded into database in %.2f seconds', time.time() - start_time)
+        load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
+        load_to_local(predictions, path='streamlit/data/predictions.csv')
+
+        logger.info('MVP predictions loaded into database and local csv in %.2f seconds', time.time() - start_time)
 
 
     @task(trigger_rule='all_success')
