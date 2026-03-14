@@ -3,6 +3,7 @@ import pandas as pd # pyright: ignore[reportMissingModuleSource]
 from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from source.db.connection import get_engine
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -47,4 +48,4 @@ def load_to_local(df: pd.DataFrame, path: str):
 
     logger.info('Loading data to local CSV at %s with %d rows', path, len(df))
 
-    df.to_csv(path, index=False)
+    df.to_csv(Path(path), index=False)

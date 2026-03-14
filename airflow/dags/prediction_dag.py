@@ -260,7 +260,7 @@ def update_pipeline():
         predictions = pd.read_parquet(file_path)
 
         load_to_database(predictions, user='ml', table_name='mvp_predictions', schema='predictions')
-        load_to_local(predictions, path='streamlit/data/predictions.csv')
+        load_to_local(predictions, path='/opt/airflow/streamlit/data/predictions.csv')
 
         logger.info('MVP predictions loaded into database and local csv in %.2f seconds', time.time() - start_time)
 

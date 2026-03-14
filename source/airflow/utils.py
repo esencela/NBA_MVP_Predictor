@@ -2,6 +2,7 @@ from source.db.connection import get_engine
 from sqlalchemy import text # pyright: ignore[reportMissingImports]
 from source.config.settings import CURRENT_SEASON
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
+from pathlib import Path
 
 
 def log_data_freshness(data_freshness, **kwargs):
@@ -49,4 +50,4 @@ def log_data_freshness(data_freshness, **kwargs):
             'trigger_type': trigger_type
         }])
 
-        df.to_csv('streamlit/data/data_freshness.csv', index=False)
+        df.to_csv(Path('/opt/airflow/streamlit/data/data_freshness.csv'), index=False)

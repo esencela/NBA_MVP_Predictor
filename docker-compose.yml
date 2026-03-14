@@ -76,6 +76,7 @@ x-airflow-common:
     - ${PWD}/airflow/config:/opt/airflow/config
     - ${PWD}/airflow/plugins:/opt/airflow/plugins
     - ${PWD}/source:/opt/airflow/source
+    - ${PWD}/streamlit:/opt/airflow/streamlit
     - ${PWD}/airflow/scripts:/opt/airflow/scripts
     - ${PWD}/airflow/requirements.txt:/requirements.txt
     - ${PWD}/airflow/models:/opt/airflow/models
