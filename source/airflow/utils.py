@@ -34,17 +34,19 @@ def log_data_freshness(data_freshness, **kwargs):
             'dag_id': kwargs['dag'].dag_id,
             'run_id': kwargs['run_id'],
             'season': CURRENT_SEASON,
+            'time_updated': pd.Timestamp.now(),
             'data_freshness': data_freshness,
             'trigger_type': trigger_type
         })
 
         # Save table to local CSV for access in Streamlit app
-        result = conn.execute(text("""
-            SELECT *
-            FROM metadata.data_freshness
-            ORDER BY time_updated DESC
-            LIMIT 1
-        """), {'dag_id': kwargs['dag'].dag_id})
+        df = pd.DataFrame([{
+            'dag_id': kwargs['dag'].dag_id,
+            'run_id': kwargs['run_id'],
+            'season': CURRENT_SEASON,
+            'time_updated': pd.Timestamp.now(),
+            'data_freshness': data_freshness,
+            'trigger_type': trigger_type
+        }])
 
-        df = pd.DataFrame(result.fetchall(), columns=result.keys())
         df.to_csv('streamlit/data/data_freshness.csv', index=False)
