@@ -14,4 +14,3 @@ APP_POSTGRES_USER = os.getenv("APP_POSTGRES_USER")
 APP_POSTGRES_PASSWORD = os.getenv("APP_POSTGRES_PASSWORD")
 
 MVP_MODEL_PATH = "/opt/airflow/models/mvp_model.pkl"
-os.makedirs(os.path.dirname(MVP_MODEL_PATH), exist_ok=True)
