@@ -1,5 +1,11 @@
 import streamlit as st
 import pandas as pd # pyright: ignore[reportMissingModuleSource]
+import sys
+from pathlib import Path
+
+# Add repo root to path for imports
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
 from source.config.settings import CURRENT_SEASON
 
 st.set_page_config(
@@ -7,7 +13,7 @@ st.set_page_config(
 )
 
 # Read leaderboard data from github CSV file
-df_mvp = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/refs/heads/main/streamlit/data/leaderboard.csv')
+df_mvp = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/main/streamlit/data/leaderboard.csv')
 
 # Add headshot URLs based on player_id
 df_mvp['Headshot'] = df_mvp['player_id'].apply(
@@ -15,12 +21,15 @@ df_mvp['Headshot'] = df_mvp['player_id'].apply(
 )
 
 # Add team logo URLs based on team abbreviation and season
+logo_hash = '202603120' # Hash may need updating if logos are not showing
+
 df_mvp['Team_Logo'] = df_mvp['Team'].apply(
-    lambda x: f'https://cdn.ssref.net/req/202603120/tlogo/bbr/{x}-{CURRENT_SEASON}.png'
+    lambda x: f'https://cdn.ssref.net/req/{logo_hash}/tlogo/bbr/{x}-{CURRENT_SEASON}.png'
 )
 
 df_mvp.drop(columns=['player_id', 'Team'], inplace=True)
 
+#Reorder columns
 df_mvp = df_mvp[['Rank', 'Headshot', 'Player', 'Team_Logo', 'MP','PTS', 'AST', 'TRB', 'STL', 'BLK', 'Predicted_Share']]
 
 st.title('NBA MVP Predictor :basketball:')
@@ -40,7 +49,6 @@ with col1:
     
 with col2:
     st.image(leader['Headshot'], width=100)
-
 
 
 st.subheader('MVP Leaderboard')
@@ -66,7 +74,7 @@ st.dataframe(
 )
 
 # Read data freshness table from github CSV file
-df_update = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/refs/heads/main/streamlit/data/data_freshness.csv')
+df_update = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/main/streamlit/data/data_freshness.csv')
 data_freshness = pd.to_datetime(df_update['data_freshness'][0]).date()
 
 st.caption(f':clock2: Stats last updated: {data_freshness}')
