@@ -77,4 +77,5 @@ st.dataframe(
 df_update = pd.read_csv('https://raw.githubusercontent.com/esencela/NBA_MVP_Predictor/main/streamlit/data/data_freshness.csv')
 data_freshness = pd.to_datetime(df_update['data_freshness'][0])
 
+st.caption('Data provided by Basketball-Reference.com')
 st.caption(f':clock2: Stats last updated: {data_freshness}')
