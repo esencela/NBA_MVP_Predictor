@@ -6,3 +6,4 @@ The project ingests player and team stats, transforms and loads into **PostgreSQ
 
 The pipeline is orchestrated using **Apache Airflow**, with containerised services using **Docker**.
 
+![Architecture Diagram](architecture_diagram)
