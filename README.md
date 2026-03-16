@@ -8,6 +8,15 @@ The pipeline is orchestrated using **Apache Airflow**, with containerised servic
 
 You can view the live dashboard here: https://nbamvppredictor.streamlit.app/
 
+## 📑 Table of Contents
+- [Project Architecture](#project-architecture)
+- [Tech Stack](#tech-stack)
+- [Airflow DAGs](#airflow-dags)
+- [Machine Learning Model](#machine-learning-model)
+- [Streamlit Dashboard](#streamlit-dashboard)
+- [Running the Project](#running-the-project)
+- [Future Improvements](#future-improvements)
+
 ## 📂 Project Architecture
 
 ![Architecture Diagram](architecture_diagram.jpg)
