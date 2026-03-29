@@ -188,8 +188,8 @@ def clean_team_data(dict_team: dict) -> pd.DataFrame:
     logger.info('Filtered title rows from team data')
 
     # Keep only letters and spaces then strip extra spaces
-    df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
-    df_west['Western Conference'] = df_west['Western Conference'].str.replace(r"[^A-Za-z\s]+$", '', regex=True).str.strip()
+    df_east['Eastern Conference'] = df_east['Eastern Conference'].str.replace(r'(\*|\s*\(\d+\))+$', '', regex=True).str.strip()
+    df_west['Western Conference'] = df_west['Western Conference'].str.replace(r'(\*|\s*\(\d+\))+$', '', regex=True).str.strip()
 
     logger.info('Cleaned team names in team data')
 
