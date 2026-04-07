@@ -10,18 +10,18 @@ You can view the live dashboard here: https://nbamvppredictor.streamlit.app/
 
 ## 📑 Table of Contents
 - [📂 Project Architecture](#-project-architecture)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🔄 Airflow DAGs](#-airflow-dags)
+- [🧰 Tech Stack](#-tech-stack)
+- [🔀 Airflow DAGs](#-airflow-dags)
 - [🤖 Machine Learning Model](#-machine-learning-model)
 - [📊 Streamlit Dashboard](#-streamlit-dashboard)
-- [⚙️ Running the Project](#-running-the-project)
-- [🔼 Future Improvements](#-future-improvements)
+- [💻 Running the Project](#-running-the-project)
+- [🚀 Future Improvements](#-future-improvements)
 
 ## 📂 Project Architecture
 
 ![Architecture Diagram](architecture_diagram.jpg)
 
-## 🛠️ Tech Stack
+## 🧰 Tech Stack
 
 ### 🏭 Data Pipeline
 - Python (pandas, beautifulsoup)
@@ -39,7 +39,7 @@ You can view the live dashboard here: https://nbamvppredictor.streamlit.app/
 ### 📐 Testing
 - pytest
 
-## 🔄 Airflow DAGs
+## 🔀 Airflow DAGs
 The pipeline consists of three workflows:
 ### Historic ETL
 1. Extract historic data from local HTML files
@@ -112,7 +112,7 @@ Features include:
 - Season statistics
 - Data freshness
 
-## ⚙️ Running the Project
+## 💻 Running the Project
 
 Clone the repository:
 
@@ -130,7 +130,7 @@ Access the services:
 - Airflow UI: http://localhost:8080
 - Streamlit Dashboard: http://localhost:8501
 
-## 🔼 Future Improvements
+## 🚀 Future Improvements
 
 Potential enhancements could include:
 - Additional features (FG%, Average Team points, defensive metrics)
