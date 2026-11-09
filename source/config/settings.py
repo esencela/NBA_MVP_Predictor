@@ -3,7 +3,7 @@ import os
 
 load_dotenv()
 
-CURRENT_SEASON = 2026
+CURRENT_SEASON = 2027
 MIN_SEASON = 2003
 
 ETL_POSTGRES_USER = os.getenv("ETL_POSTGRES_USER")

@@ -28,7 +28,7 @@ default_args = {
     dag_id='mvp_prediction_dag',
     default_args=default_args,
     description='Update DAG that performs etl on current season data and generates mvp predictions',
-    schedule_interval='@weekly',
+    schedule_interval=None,
     start_date=datetime(2026, 1, 26),
     catchup=False
 )
