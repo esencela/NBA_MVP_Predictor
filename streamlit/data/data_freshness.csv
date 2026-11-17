@@ -1,2 +1,2 @@
 dag_id,run_id,season,time_updated,data_freshness,trigger_type
-mvp_prediction_dag,manual__2026-11-09T10:36:52.579597+00:00,2027,2026-11-09 10:37:13.485592,2026-11-09T04:56:00,manual
+mvp_prediction_dag,manual__2026-11-17T17:04:01.287303+00:00,2027,2026-11-17 17:04:22.767133,2026-11-17T07:01:00,manual
